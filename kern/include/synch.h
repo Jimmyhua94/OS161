@@ -158,8 +158,10 @@ struct rwlock {
 	struct lock *rw_lock;
 	struct spinlock rw_spinlock;
 	struct wchan *rw_wchan;
+    struct wchan *rw_rwchan;
 	int rw_rcount;
 	int rw_wcount;
+    int rw_write;
         // add what you need here
         // (don't forget to mark things volatile as needed)
 };
