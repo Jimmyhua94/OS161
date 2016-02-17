@@ -30,14 +30,14 @@ rtestthread(void *junk, unsigned long num)
 	(void)junk;
     (void)num;
     kprintf_n("read thread start...\n");
-    //spinlock_acquire(&status_lock);
     rwlock_acquire_read(testrw);
-    //spinlock_release(&status_lock);
-    kprintf_n("enter read...\n");
+    kprintf_n("read thread acquired...\n");
+    kprintf_t("read testval1: %d\n",testval1);
+    kprintf_t("read testval2: %d\n",testval2);
     if (testval1 != testval2)
         goto fail;
     rwlock_release_read(testrw);
-    kprintf_n("read thread end...\n");
+    kprintf_n("read thread released...\n");
 	V(donesem);
     return;
 
@@ -55,23 +55,21 @@ wtestthread(void *junk, unsigned long num)
 	(void)junk;
     (void)num;
     kprintf_n("write thread start...\n");
-    //spinlock_acquire(&status_lock);
     rwlock_acquire_write(testrw);
-    //spinlock_release(&status_lock);
     kprintf_n("write thread acquired...\n");
+    kprintf_t("testval1: %d\n",testval1);
     testval1++;
+    kprintf_t("write testval1++: %d\n",testval1);
     if (testval1 != ++testval2){
-        kprintf_n("testval != testval2...\n");
         goto fail;
     }
     rwlock_release_write(testrw);
-    kprintf_n("write thread end...\n");
+    kprintf_n("write thread released...\n");
 	V(donesem);
     return;
 
 fail:
     rwlock_release_write(testrw);
-    kprintf_n("Failed...\n");
 	test_status = FAIL;
 	V(donesem);
 	return;
@@ -93,7 +91,6 @@ rwtest(int nargs, char **args)
     if (testrw == NULL) {
 		panic("rwt1: rwlock_create failed\n");
 	}
-    kprintf_n("rwlock created...\n");
     donesem = sem_create("donesem", 0);
 	if (donesem == NULL) {
 		panic("rwt1: sem_create failed\n");
@@ -125,14 +122,10 @@ rwtest(int nargs, char **args)
 		P(donesem);
 	}
     
-    kprintf_n("end rwt1...\n");
-    
     rwlock_destroy(testrw);
     sem_destroy(donesem);
     testrw = NULL;
     donesem = NULL;
-    
-    kprintf_n("clear rwt1...\n");
 
 	kprintf_t("\n");
 	success(test_status, SECRET, "rwt1");
