@@ -18,6 +18,7 @@ static volatile unsigned long testval1;
 static volatile unsigned long testval2;
 
 static struct rwlock *testrw = NULL;
+struct spinlock status_lock;
 static struct semaphore *donesem = NULL;
 
 static bool test_status = FAIL;
@@ -29,12 +30,12 @@ rtestthread(void *junk, unsigned long num)
 	(void)junk;
     (void)num;
     kprintf_n("read thread start...\n");
+    //spinlock_acquire(&status_lock);
     rwlock_acquire_read(testrw);
+    //spinlock_release(&status_lock);
     kprintf_n("enter read...\n");
-    random_yielder(4);
     if (testval1 != testval2)
         goto fail;
-    random_yielder(4);
     rwlock_release_read(testrw);
     kprintf_n("read thread end...\n");
 	V(donesem);
@@ -54,21 +55,23 @@ wtestthread(void *junk, unsigned long num)
 	(void)junk;
     (void)num;
     kprintf_n("write thread start...\n");
+    //spinlock_acquire(&status_lock);
     rwlock_acquire_write(testrw);
+    //spinlock_release(&status_lock);
     kprintf_n("write thread acquired...\n");
-    random_yielder(4);
     testval1++;
-    random_yielder(4);
-    if (testval1 != testval2+1)
+    if (testval1 != ++testval2){
+        kprintf_n("testval != testval2...\n");
         goto fail;
-    random_yielder(4);
+    }
     rwlock_release_write(testrw);
     kprintf_n("write thread end...\n");
 	V(donesem);
     return;
 
 fail:
-    rwlock_release_read(testrw);
+    rwlock_release_write(testrw);
+    kprintf_n("Failed...\n");
 	test_status = FAIL;
 	V(donesem);
 	return;
@@ -95,8 +98,8 @@ rwtest(int nargs, char **args)
 	if (donesem == NULL) {
 		panic("rwt1: sem_create failed\n");
 	}
-    
-    kprintf_n("semaphore created...\n");
+
+    spinlock_init(&status_lock);
 
 	testval1 = NTHREADS-1;
     testval2 = testval1;
@@ -109,8 +112,6 @@ rwtest(int nargs, char **args)
 		}
 	}
     
-    kprintf_n("write created...\n");
-    
 	for (i=0; i<NTHREADS/2; i++) {
 		kprintf_t(".");
 		result = thread_fork("rwtest", NULL, rtestthread, NULL, (long unsigned) i);
@@ -118,8 +119,6 @@ rwtest(int nargs, char **args)
 			panic("rwt1: thread_fork failed: %s\n", strerror(result));
 		}
 	}
-    
-    kprintf_n("read created...\n");
     
 	for (i=0; i<NTHREADS; i++) {
 		kprintf_t(".");
@@ -132,6 +131,8 @@ rwtest(int nargs, char **args)
     sem_destroy(donesem);
     testrw = NULL;
     donesem = NULL;
+    
+    kprintf_n("clear rwt1...\n");
 
 	kprintf_t("\n");
 	success(test_status, SECRET, "rwt1");

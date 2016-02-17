@@ -44,7 +44,38 @@
  * Called by the driver during initialization.
  */
 
+static struct semaphore *male_sem;
+static struct semaphore *female_sem;
+static struct semaphore *matchmaker_sem;
+static struct semaphore *mating_sem;
+static volatile int male_count;
+static volatile int female_count;
+static struct lock *male_lock;
+static  struct lock *female_lock;
+
+
 void whalemating_init() {
+    male_sem = sem_create("male_sem",0);
+    if (male_sem == NULL) {
+        panic("sp1: sem_create failed\n");
+    }
+    female_sem = sem_create("female_sem",0);
+    if (female_sem == NULL) {
+        panic("sp1: sem_create failed\n");
+    }
+    matchmaker_sem = sem_create("matchmaker_sem",0);
+    if (matchmaker_sem == NULL) {
+        panic("sp1: sem_create failed\n");
+    }
+    mating_sem = sem_create("mating_sem",0);
+    if (mating_sem == NULL) {
+        panic("sp1: sem_create failed\n");
+    }
+    
+    male_lock = lock_create("male_lock");
+    
+    female_lock = lock_create("female_lock");
+    
 	return;
 }
 
@@ -54,13 +85,29 @@ void whalemating_init() {
 
 void
 whalemating_cleanup() {
+    sem_destroy(male_sem);
+    sem_destroy(female_sem);
+    sem_destroy(matchmaker_sem);
+    sem_destroy(mating_sem);
+    
+    lock_destroy(male_lock);
+    lock_destroy(female_lock);
 	return;
 }
 
 void
 male(uint32_t index)
 {
-	(void)index;
+    uint32_t male_id = index;
+    male_start(male_id);
+    lock_acquire(male_lock);
+    male_count++;
+    lock_release(male_lock);
+    P(male_sem);
+    male_end(male_id);
+    lock_acquire(male_lock);
+    male_count--;
+    lock_release(male_lock);
 	/*
 	 * Implement this function by calling male_start and male_end when
 	 * appropriate.
@@ -71,7 +118,17 @@ male(uint32_t index)
 void
 female(uint32_t index)
 {
-	(void)index;
+    uint32_t female_id = index;
+    female_start(female_id);
+    lock_acquire(female_lock);
+    female_count++;
+    lock_release(female_lock);
+    P(female_sem);
+    female_end(female_id);
+    lock_acquire(female_lock);
+    female_count--;
+    lock_release(female_lock);
+
 	/*
 	 * Implement this function by calling female_start and female_end when
 	 * appropriate.
@@ -82,7 +139,16 @@ female(uint32_t index)
 void
 matchmaker(uint32_t index)
 {
-	(void)index;
+    uint32_t matchmaker_id = index;
+    matchmaker_start(matchmaker_id);
+    do{
+        if(male_count > 0 && female_count > 0){
+            V(male_sem);
+            V(female_sem);
+        }
+    }while(male_count == 0 || female_count == 0);
+    matchmaker_end(matchmaker_id);
+
 	/*
 	 * Implement this function by calling matchmaker_start and matchmaker_end
 	 * when appropriate.
