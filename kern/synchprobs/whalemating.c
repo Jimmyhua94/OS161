@@ -47,7 +47,6 @@
 static struct semaphore *male_sem;
 static struct semaphore *female_sem;
 static struct semaphore *matchmaker_sem;
-static struct semaphore *mating_sem;
 static volatile int male_count;
 static volatile int female_count;
 static struct lock *male_lock;
@@ -67,15 +66,15 @@ void whalemating_init() {
     if (matchmaker_sem == NULL) {
         panic("sp1: sem_create failed\n");
     }
-    mating_sem = sem_create("mating_sem",0);
-    if (mating_sem == NULL) {
-        panic("sp1: sem_create failed\n");
-    }
     
     male_lock = lock_create("male_lock");
-    
+    if (male_lock == NULL) {
+        panic("sp1: lock_create failed\n");
+    }
     female_lock = lock_create("female_lock");
-    
+    if (female_lock == NULL) {
+        panic("sp1: lock_create failed\n");
+    }
 	return;
 }
 
@@ -88,7 +87,6 @@ whalemating_cleanup() {
     sem_destroy(male_sem);
     sem_destroy(female_sem);
     sem_destroy(matchmaker_sem);
-    sem_destroy(mating_sem);
     
     lock_destroy(male_lock);
     lock_destroy(female_lock);
