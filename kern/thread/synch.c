@@ -360,8 +360,8 @@ rwlock_acquire_read(struct rwlock *rw)
     }
     else{
         spinlock_acquire(&rw->rw_spinlock);
-        rw->rw_rcount++;
         wchan_sleep(rw->rw_rwchan,&rw->rw_spinlock);
+        rw->rw_rcount++;
         spinlock_release(&rw->rw_spinlock);
     }
 }
@@ -379,11 +379,6 @@ rwlock_release_read(struct rwlock *rw)
     if (rw->rw_rcount == 0){
         spinlock_acquire(&rw->rw_spinlock);
         wchan_wakeone(rw->rw_wchan,&rw->rw_spinlock);
-        spinlock_release(&rw->rw_spinlock);
-    }
-    else{
-        spinlock_acquire(&rw->rw_spinlock);
-        wchan_wakeall(rw->rw_rwchan,&rw->rw_spinlock);
         spinlock_release(&rw->rw_spinlock);
     }
 }
@@ -421,14 +416,7 @@ rwlock_release_write(struct rwlock *rw)
     rw->rw_write = 0;
     spinlock_release(&rw->rw_spinlock);
     
-    if (rw->rw_rcount == 0){
-        spinlock_acquire(&rw->rw_spinlock);
-        wchan_wakeone(rw->rw_wchan,&rw->rw_spinlock);
-        spinlock_release(&rw->rw_spinlock);
-    }
-    else{
-        spinlock_acquire(&rw->rw_spinlock);
-        wchan_wakeall(rw->rw_rwchan,&rw->rw_spinlock);
-        spinlock_release(&rw->rw_spinlock);
-    }
+    spinlock_acquire(&rw->rw_spinlock);
+    wchan_wakeall(rw->rw_rwchan,&rw->rw_spinlock);
+    spinlock_release(&rw->rw_spinlock);
 }
