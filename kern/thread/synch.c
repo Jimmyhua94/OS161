@@ -353,7 +353,7 @@ rwlock_acquire_read(struct rwlock *rw)
 {
 	KASSERT(rw != NULL);
 
-    if (rw->rw_wcount == 0){
+    if (rw->rw_write == 0){
         spinlock_acquire(&rw->rw_spinlock);
         rw->rw_rcount++;
         spinlock_release(&rw->rw_spinlock);
