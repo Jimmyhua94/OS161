@@ -39,6 +39,7 @@
 #include <array.h>
 #include <spinlock.h>
 #include <threadlist.h>
+#include <limits.h>
 
 struct cpu;
 
@@ -63,6 +64,14 @@ typedef enum {
 	S_SLEEP,	/* sleeping */
 	S_ZOMBIE,	/* zombie; exited but not yet deleted */
 } threadstate_t;
+
+struct handler {
+    int fd;                     /* File Descriptor, not really needed as index is the same */
+    struct vnode *path;         /* File */
+    int offset;                   /* offset for read/write*/
+    int flags;                   /* O_RDONLY, O_WRONLY, O_RDWR falgs */
+    int count;                  /* How many have this file opened */
+};
 
 /* Thread structure. */
 struct thread {
@@ -106,6 +115,8 @@ struct thread {
 	 */
 
 	/* add more here as needed */
+    /* File Table */
+    struct handler* ft[__OPEN_MAX];    /* Array of handlers as File Table */
 };
 
 /*

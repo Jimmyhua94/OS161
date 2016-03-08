@@ -44,6 +44,7 @@
 #include <vfs.h>
 #include <syscall.h>
 #include <test.h>
+#include <kern/unistd.h>
 
 /*
  * Load program "progname" and start running it in usermode.
@@ -58,6 +59,8 @@ runprogram(char *progname)
 	struct vnode *v;
 	vaddr_t entrypoint, stackptr;
 	int result;
+    
+    
 
 	/* Open the file. */
 	result = vfs_open(progname, O_RDONLY, 0, &v);
@@ -96,6 +99,46 @@ runprogram(char *progname)
 		/* p_addrspace will go away when curproc is destroyed */
 		return result;
 	}
+    
+    
+    struct vnode *stdv;
+    char *console = NULL;
+    console = kstrdup("con:");
+    result = vfs_open(console,O_RDONLY,0664,&stdv);
+    if (result){
+        return result;
+    }
+    //struct handler handler;
+    struct handler* handle = kmalloc(sizeof(*handle));
+    //handle = &handler;
+    handle->path = stdv;
+    handle->offset = 0;
+    handle->flags = O_RDONLY;
+    handle->count = 0;
+    curthread->ft[STDIN_FILENO] = handle;
+
+    result = vfs_open(console,O_WRONLY,0664,&stdv);
+    if (result){
+        return result;
+    }
+    handle = kmalloc(sizeof(*handle));
+    handle->path = stdv;
+    handle->offset = 0;
+    handle->flags = O_WRONLY;
+    handle->count = 0;
+    curthread->ft[STDOUT_FILENO] = handle;
+    
+    result = vfs_open(console,O_WRONLY,0664,&stdv);
+    if (result){
+        return result;
+    }
+    handle = kmalloc(sizeof(*handle));
+    handle->path = stdv;
+    handle->offset = 0;
+    handle->flags = O_WRONLY;
+    handle->count = 0;
+    curthread->ft[STDERR_FILENO] = handle;
+    
 
 	/* Warp to user mode. */
 	enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,

@@ -1,4 +1,6 @@
-cd kern/compile/DUMBVM/
+cd ~/src/os161/kern/conf/
+./config DUMBVM
+cd ~/src/os161/kern/compile/DUMBVM/
 bmake clean
 bmake depend
 bmake

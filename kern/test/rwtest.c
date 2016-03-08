@@ -21,7 +21,7 @@ static struct rwlock *testrw = NULL;
 struct spinlock status_lock;
 static struct semaphore *donesem = NULL;
 
-static bool test_status = FAIL;
+static bool test_status = TEST161_FAIL;
 
 static
 void
@@ -43,7 +43,7 @@ rtestthread(void *junk, unsigned long num)
 
 fail:
     rwlock_release_read(testrw);
-	test_status = FAIL;;
+	test_status = TEST161_FAIL;
 	V(donesem);
 	return;
 }
@@ -70,7 +70,7 @@ wtestthread(void *junk, unsigned long num)
 
 fail:
     rwlock_release_write(testrw);
-	test_status = FAIL;
+	test_status = TEST161_FAIL;
 	V(donesem);
 	return;
 }
@@ -85,7 +85,7 @@ rwtest(int nargs, char **args)
 
 	kprintf_n("Starting rwt1...\n");
 	
-	test_status = SUCCESS;
+	test_status = TEST161_SUCCESS;
     
     testrw = rwlock_create("rwtest");
     if (testrw == NULL) {

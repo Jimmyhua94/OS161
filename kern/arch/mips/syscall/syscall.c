@@ -101,13 +101,17 @@ syscall(struct trapframe *tf)
 
 	switch (callno) {
 	    case SYS_reboot:
-		err = sys_reboot(tf->tf_a0);
-		break;
+            err = sys_reboot(tf->tf_a0);
+            break;
 
 	    case SYS___time:
-		err = sys___time((userptr_t)tf->tf_a0,
+            err = sys___time((userptr_t)tf->tf_a0,
 				 (userptr_t)tf->tf_a1);
-		break;
+            break;
+
+        case SYS_open:
+            err = sys___open((const_userptr_t)tf->tf_a0, tf->tf_a1, tf->tf_a2);
+            break;
 
 	    /* Add stuff here */
 
