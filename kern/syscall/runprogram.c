@@ -108,15 +108,18 @@ runprogram(char *progname)
     if (result){
         return result;
     }
-    //struct handler handler;
+    // struct handler handler;
+    //struct handler* handle;
+    // handle = &handler;
     struct handler* handle = kmalloc(sizeof(*handle));
-    //handle = &handler;
     handle->path = stdv;
     handle->offset = 0;
     handle->flags = O_RDONLY;
     handle->count = 0;
     curthread->ft[STDIN_FILENO] = handle;
+    handle = NULL;
 
+    console = kstrdup("con:");
     result = vfs_open(console,O_WRONLY,0664,&stdv);
     if (result){
         return result;
@@ -127,7 +130,9 @@ runprogram(char *progname)
     handle->flags = O_WRONLY;
     handle->count = 0;
     curthread->ft[STDOUT_FILENO] = handle;
+    handle = NULL;
     
+    console = kstrdup("con:");
     result = vfs_open(console,O_WRONLY,0664,&stdv);
     if (result){
         return result;
@@ -136,9 +141,8 @@ runprogram(char *progname)
     handle->path = stdv;
     handle->offset = 0;
     handle->flags = O_WRONLY;
-    handle->count = 0;
+    handle->count = 50;
     curthread->ft[STDERR_FILENO] = handle;
-    
 
 	/* Warp to user mode. */
 	enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,
