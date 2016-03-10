@@ -19,7 +19,6 @@ int sys___lseek(int fd, off_t pos, int whence, int64_t *retval){
         return ESPIPE;
     }
     if(whence == SEEK_SET){
-        kprintf("set");
         if(pos >= 0){
             curproc->ft[fd]->offset = pos;
         }

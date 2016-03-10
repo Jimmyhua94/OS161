@@ -18,7 +18,7 @@ int sys___read(int fd, const void *buf, size_t nbytes, int32_t *retval)
     {
         return EBADF;
     }
-    if (curproc->ft[fd]->flags & O_WRONLY)
+    if (curproc->ft[fd]->flags == O_WRONLY)
     {
         return EBADF;
     }
