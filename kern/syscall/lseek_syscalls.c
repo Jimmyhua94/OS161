@@ -11,7 +11,7 @@
 
 int sys___lseek(int fd, off_t pos, int whence, int64_t *retval){
     int64_t result;
-    if(curproc->ft[fd] == NULL){
+    if(fd < 3 || fd > OPEN_MAX || curproc->ft[fd] == NULL){
         return EBADF;
     }
     

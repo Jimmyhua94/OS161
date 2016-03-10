@@ -14,7 +14,7 @@
 
 int sys___read(int fd, const void *buf, size_t nbytes, int32_t *retval)
 {
-    if (curproc->ft[fd] == NULL)
+    if (fd < 0 || fd > OPEN_MAX || curproc->ft[fd] == NULL)
     {
         return EBADF;
     }

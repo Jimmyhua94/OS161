@@ -7,10 +7,15 @@
 #include <kern/errno.h>
 
 int sys___close(int fd){
-    if(curproc->ft[fd] == NULL){
+    if(fd < 0 || fd > OPEN_MAX || curproc->ft[fd] == NULL){
         return EBADF;
     }
-    kfree(curproc->ft[fd]);
-    curproc->ft[fd] = NULL;
+    if(curproc->ft[fd]->count == 0){
+        kfree(curproc->ft[fd]);
+        curproc->ft[fd] = NULL;
+    }
+    else{
+        curproc->ft[fd]->count--;
+    }
     return 0;
 }
