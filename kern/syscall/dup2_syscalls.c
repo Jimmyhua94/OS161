@@ -1,4 +1,10 @@
-
+#include <types.h>
+#include <syscall.h>
+#include <current.h>
+#include <thread.h>
+#include <proc.h>
+#include <limits.h>
+#include <kern/errno.h>
 
 
 int sys___dup2(int oldfd, int newfd, int32_t *retval){

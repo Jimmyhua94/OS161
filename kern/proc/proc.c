@@ -184,6 +184,8 @@ void
 proc_bootstrap(void)
 {
 	kproc = proc_create("[kernel]");
+	memset(kproc->pt,0,sizeof(kproc->pt));
+	kproc->pidCounter = PID_MIN;
 	if (kproc == NULL) {
 		panic("proc_create for kproc failed\n");
 	}
@@ -222,6 +224,14 @@ proc_create_runprogram(const char *name)
 		newproc->p_cwd = curproc->p_cwd;
 	}
 	spinlock_release(&curproc->p_lock);
+	
+	newproc->pid = kproc->pidCounter++;
+	for(newproc->procIndex = 0;newproc->procIndex < PID_MAX; newproc->procIndex++){
+		if(kproc->pt[newproc->procIndex] == NULL){
+			break;
+		}
+	}
+	kproc->pt[newproc->procIndex] = newproc;
 
 	return newproc;
 }

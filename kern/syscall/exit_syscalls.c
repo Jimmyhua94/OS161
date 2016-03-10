@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #include <types.h>
 #include <kern/errno.h>
 #include <kern/unistd.h>
@@ -13,26 +12,19 @@
 void sys__exit(int exitcode)
 {
     struct addrspace *as;
-    struct proc *p;
-    p = curproc;
     
-    (void)exitcode;
+	curproc->exited = 1;
+    curproc->exitcode = _MKWAIT_EXIT(exitcode);
     
     //KASSERT
-    as_deactivate();
+    // as_deactivate();
     
-    as = curproc_setas(NULL);
-    as_destroy(as);
+    // as = curproc_setas(NULL);
+    // as_destroy(as);
     
-    proc_remthread(curthread);
+    // proc_remthread(curthread);
     
-    proc_destroy(p);
+    // proc_destroy(p);
     
-    thread_exit();
-=======
-
-
-void sys___exit(int exitcode){
-    
->>>>>>> 443da2642d8ab9448b0d996bbdf8c538505ceb12
+    // thread_exit();
 }

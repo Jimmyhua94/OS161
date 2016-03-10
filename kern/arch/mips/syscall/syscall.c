@@ -143,6 +143,9 @@ syscall(struct trapframe *tf)
         case SYS_read:
             err = sys___read(tf->tf_a0,(const void *)tf->tf_a1, tf->tf_a2, &retval);
             break;
+		case SYS_dup2:
+			err = sys___dup2(tf->tf_a0, tf->tf_a1, &retval);
+			break;
 	    /* Add stuff here */
 
 	    default:
