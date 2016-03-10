@@ -35,6 +35,7 @@
 #include <thread.h>
 #include <current.h>
 #include <syscall.h>
+#include <copyinout.h>
 
 
 /*
@@ -80,6 +81,9 @@ syscall(struct trapframe *tf)
 {
 	int callno;
 	int32_t retval;
+    int32_t retval2;
+    int64_t ret64val;
+    int32_t lseek;
 	int err;
 
 	KASSERT(curthread != NULL);
@@ -98,6 +102,7 @@ syscall(struct trapframe *tf)
 	 */
 
 	retval = 0;
+    retval2 = 0;
 
 	switch (callno) {
 	    case SYS_reboot:
@@ -110,9 +115,34 @@ syscall(struct trapframe *tf)
             break;
 
         case SYS_open:
-            err = sys___open((const_userptr_t)tf->tf_a0, tf->tf_a1, tf->tf_a2);
+            err = sys___open((const_userptr_t)tf->tf_a0, tf->tf_a1, tf->tf_a2, &retval);
             break;
-
+            
+        case SYS_write:
+            err = sys___write(tf->tf_a0,(const void *)tf->tf_a1, tf->tf_a2, &retval);
+            break;
+            
+        case SYS_close:
+            err = sys___close(tf->tf_a0);
+            break;
+            
+        case SYS___getcwd:
+            err = sys___getcwd((userptr_t) tf->tf_a0,tf->tf_a1,&retval);
+            break;
+            
+        case SYS_chdir:
+            err = sys___chdir((const_userptr_t)tf->tf_a0);
+            break;
+            
+        case SYS_lseek:
+            copyin((const_userptr_t)tf->tf_sp+16,&lseek,sizeof(int32_t));
+            err = sys___lseek(tf->tf_a0, (off_t)((off_t)tf->tf_a2 << 32 | (off_t)tf->tf_a3), lseek, &ret64val);
+            retval = ret64val >> 32;
+            retval2 = ret64val;
+            break;
+        case SYS_read:
+            err = sys___read(tf->tf_a0,(const void *)tf->tf_a1, tf->tf_a2, &retval);
+            break;
 	    /* Add stuff here */
 
 	    default:
@@ -134,6 +164,7 @@ syscall(struct trapframe *tf)
 	else {
 		/* Success. */
 		tf->tf_v0 = retval;
+        tf->tf_v1 = retval2;
 		tf->tf_a3 = 0;      /* signal no error */
 	}
 
