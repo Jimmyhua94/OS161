@@ -64,5 +64,6 @@ int sys___close(int fd);
 int sys___getcwd(userptr_t buf,size_t buflen,int32_t *retval);
 int sys___chdir(const_userptr_t pathname);
 int sys___lseek(int fd, off_t pos, int whence, int64_t *retval);
+int sys___read(int fd, const void *buf, size_t nbytes, int32_t *retval);
 
 #endif /* _SYSCALL_H_ */

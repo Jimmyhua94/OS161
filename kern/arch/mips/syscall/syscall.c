@@ -140,6 +140,9 @@ syscall(struct trapframe *tf)
             retval = ret64val >> 32;
             retval2 = ret64val;
             break;
+        case SYS_read:
+            err = sys___read(tf->tf_a0,(const void *)tf->tf_a1, tf->tf_a2, &retval);
+            break;
 	    /* Add stuff here */
 
 	    default:
