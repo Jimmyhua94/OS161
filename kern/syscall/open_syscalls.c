@@ -4,22 +4,21 @@
 #include <syscall.h>
 #include <current.h>
 #include <thread.h>
+#include <proc.h>
 #include <copyinout.h>
 #include <limits.h>
 #include <kern/errno.h>
 #include <kern/fcntl.h>
 #include <lib.h>
+#include <kern/stat.h>
 
 int sys___open(const_userptr_t filename, int flags,mode_t mode,int32_t *retval){
     int result;
-    if (!((flags == O_RDONLY) | (flags == O_WRONLY) | (flags == O_RDWR))){
-        return EINVAL;
-    }
     
-    char filepath[__PATH_MAX];
-    size_t *size = 0;
+    char filepath[PATH_MAX];
+    size_t size = 0;
     
-    result = copyinstr(filename,filepath,__PATH_MAX,size);
+    result = copyinstr(filename,filepath, PATH_MAX,&size);
     
     if (result){
         return result;
@@ -38,20 +37,40 @@ int sys___open(const_userptr_t filename, int flags,mode_t mode,int32_t *retval){
     }
     
     if (result){
+        kfree(handle);
         return result;
     }
     
-    for (handle->fd = 0; handle->fd < __OPEN_MAX; handle->fd++){
-        if(curthread->ft[handle->fd] == NULL){
+    for (handle->fd = 0; handle->fd < OPEN_MAX; handle->fd++){
+        if(curproc->ft[handle->fd] == NULL){
             break;
         }
     }
     handle->path = v;
-    handle->offset = 0;
-    handle->flags = flags;
+    if (flags & O_APPEND){
+        struct stat *stats = kmalloc(sizeof(*stats));
+        result = VOP_STAT(v,stats);
+        if (result){
+            return result;
+        }
+        handle->offset = stats->st_size;
+        kfree(stats);
+    }
+    else{
+        handle->offset = 0;
+    }
+    if (flags & O_RDONLY){
+        handle->flags |= O_RDONLY;
+    }
+    else if (flags & O_WRONLY){
+        handle->flags |= O_WRONLY;
+    }
+    else if (flags & O_RDWR){
+        handle->flags |= O_RDWR;
+    }
     handle->count = 1;
     
-    curthread->ft[handle->fd] = handle;
+    curproc->ft[handle->fd] = handle;
     *retval = handle->fd;
     return 0;
 }

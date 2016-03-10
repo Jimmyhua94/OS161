@@ -114,7 +114,19 @@ syscall(struct trapframe *tf)
             break;
             
         case SYS_write:
-            err = sys___write(tf->tf_a0,(const void *)tf->tf_a1, tf->tf_a2);
+            err = sys___write(tf->tf_a0,(const void *)tf->tf_a1, tf->tf_a2, &retval);
+            break;
+            
+        case SYS_close:
+            err = sys___close(tf->tf_a0);
+            break;
+            
+        case SYS___getcwd:
+            err = sys___getcwd((userptr_t) tf->tf_a0,tf->tf_a1,&retval);
+            break;
+            
+        case SYS_chdir:
+            err = sys___chdir((const_userptr_t)tf->tf_a0);
             break;
 	    /* Add stuff here */
 

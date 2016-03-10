@@ -116,7 +116,7 @@ runprogram(char *progname)
     handle->offset = 0;
     handle->flags = O_RDONLY;
     handle->count = 0;
-    curthread->ft[STDIN_FILENO] = handle;
+    curproc->ft[STDIN_FILENO] = handle;
     handle = NULL;
 
     console = kstrdup("con:");
@@ -129,7 +129,7 @@ runprogram(char *progname)
     handle->offset = 0;
     handle->flags = O_WRONLY;
     handle->count = 0;
-    curthread->ft[STDOUT_FILENO] = handle;
+    curproc->ft[STDOUT_FILENO] = handle;
     handle = NULL;
     
     console = kstrdup("con:");
@@ -142,7 +142,7 @@ runprogram(char *progname)
     handle->offset = 0;
     handle->flags = O_WRONLY;
     handle->count = 50;
-    curthread->ft[STDERR_FILENO] = handle;
+    curproc->ft[STDERR_FILENO] = handle;
 
 	/* Warp to user mode. */
 	enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,

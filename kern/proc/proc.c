@@ -84,6 +84,8 @@ proc_create(const char *name)
 
 	/* VFS fields */
 	proc->p_cwd = NULL;
+    
+    memset(proc->ft,0,sizeof(proc->ft));
 
 	return proc;
 }
