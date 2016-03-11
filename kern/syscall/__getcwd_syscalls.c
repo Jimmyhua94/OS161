@@ -2,9 +2,16 @@
 #include <vfs.h>
 #include <syscall.h>
 #include <uio.h>
+#include <kern/errno.h>
 
 int sys___getcwd(userptr_t buf,size_t buflen,int32_t *retval){
     int result;
+    
+        //error handling
+    if(buf == NULL)
+    {
+        return EFAULT;
+    }
     
     struct iovec *iov = kmalloc(sizeof(*iov));
     struct uio *u = kmalloc(sizeof(*u));
@@ -13,12 +20,6 @@ int sys___getcwd(userptr_t buf,size_t buflen,int32_t *retval){
     result = vfs_getcwd(u);
     if(result){
         return result;
-    }
-    
-    //error handling
-    if(buf == NULL)
-    {
-        return EFAULT;
     }
     
     *retval = buflen - u->uio_resid;

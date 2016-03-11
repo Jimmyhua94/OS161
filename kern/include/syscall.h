@@ -51,7 +51,7 @@ void enter_forked_process(struct trapframe *tf);
 __DEAD void enter_new_process(int argc, userptr_t argv, userptr_t env,
 		       vaddr_t stackptr, vaddr_t entrypoint);
 
-
+void child_forkentry(void *tf, unsigned long addrspace);
 /*
  * Prototypes for IN-KERNEL entry points for system call implementations.
  */
@@ -68,5 +68,6 @@ int sys___read(int fd, const void *buf, size_t nbytes, int32_t *retval);
 int sys___dup2(int oldfd, int newfd, int32_t *retval);
 int sys___getpid(int32_t *retval);
 int sys___execv(const_userptr_t program, userptr_t args);
+int sys___fork(struct trapframe *tf,int *retval);
 
 #endif /* _SYSCALL_H_ */
