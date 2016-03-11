@@ -4,7 +4,7 @@
 #include <thread.h>
 #include <proc.h>
 
-int sys___gitpid(int32_t *retval){
-    *retval = curproc.pid;
+int sys___getpid(int32_t *retval){
+    *retval = curproc->pid;
     return 0;
 }

@@ -67,5 +67,6 @@ int sys___lseek(int fd, off_t pos, int whence, int64_t *retval);
 int sys___read(int fd, const void *buf, size_t nbytes, int32_t *retval);
 int sys___dup2(int oldfd, int newfd, int32_t *retval);
 int sys___getpid(int32_t *retval);
+int sys___execv(const_userptr_t program, userptr_t args);
 
 #endif /* _SYSCALL_H_ */

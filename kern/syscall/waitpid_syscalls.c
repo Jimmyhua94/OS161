@@ -2,18 +2,24 @@
 
 int sys___waitpid(pid_t pid, int *status, int options, int32_t *retval){
     void(options)
-    int pidIndex = getpid(pid);
+    if(pid == curproc->pid){
+        return ECHILD;
+    }
+    
+    curproc->waitsem = sem_create("waitsem_0");
+    
+    int pidIndex = getpidIndex(pid);
     if(pidIndex != -1){
+        if(getppid(pidIndex) != curproc->pid){
+            return ECHILD;
+        }
         if(exited(pidIndex)){
             return exitcode(pidIndex);
         }
-        //sleep and wait
+        P(curproc->waitsem);
         *status = exitcode(pidIndex);
         *retval = pid;
-        
-        if(curproc->p_numthreads == 0){
-            exorcise();
-        }
+
         return(0);
     }
     return ESRCH;

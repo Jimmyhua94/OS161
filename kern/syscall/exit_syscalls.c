@@ -15,8 +15,15 @@ void sys__exit(int exitcode)
     
 	curproc->exited = 1;
     curproc->exitcode = _MKWAIT_EXIT(exitcode);
-
+    
     thread_exit();
     
-    //wakeup ppid
+    V(curproc->waitsem);
+    
+    struct proc* = getproc(pidIndex);
+    
+    if(proc->p_numthreads == 0){
+        exorcise();
+        proc_destroy(curproc);
+    }
 }

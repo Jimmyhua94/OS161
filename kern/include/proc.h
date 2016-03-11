@@ -71,6 +71,7 @@ struct handler {
 struct proc {
 	char *p_name;			/* Name of this process */
 	struct spinlock p_lock;		/* Lock for this structure */
+    struct semaphore *waitsem;
 	unsigned p_numthreads;		/* Number of threads in this process */
 
 	/* VM */
@@ -120,6 +121,10 @@ struct addrspace *proc_getas(void);
 struct addrspace *proc_setas(struct addrspace *);
 
 int getpidIndex(pid_t pid);
+
+struct proc* getproc(int pidIndex);
+
+pid_t getpid(int pidIndex);
 
 int getppid(int pidIndex);
 

@@ -85,9 +85,11 @@ proc_create(const char *name)
 	/* VFS fields */
 	proc->p_cwd = NULL;
     
-    pid_t ppid = -1;
-    bool exited = false;
-    int exitcode = 0;
+    proc->ppid = -1;
+    proc->exited = false;
+    proc->exitcode = 0;
+    
+    proc->waitsem = NULL;
     
     memset(proc->ft,0,sizeof(proc->ft));
 
@@ -173,6 +175,8 @@ proc_destroy(struct proc *proc)
 		}
 		as_destroy(as);
 	}
+    
+    kproc->pt[proc->procIndex] = NULL;
 
 	KASSERT(proc->p_numthreads == 0);
 	spinlock_cleanup(&proc->p_lock);
@@ -189,6 +193,7 @@ proc_bootstrap(void)
 {
 	kproc = proc_create("[kernel]");
 	memset(kproc->pt,0,sizeof(kproc->pt));
+	kproc->pidCounter = PID_MIN;
 	kproc->pidCounter = PID_MIN;
 	if (kproc == NULL) {
 		panic("proc_create for kproc failed\n");
@@ -347,7 +352,15 @@ int getpidIndex(pid_t pid){
     return -1;
 }
 
-int getppid(int pidIndex){
+struct proc* getproc(int pidIndex){
+    return kproc->pt[pidIndex];
+}
+
+pid_t getpid(int pidIndex){
+    return kproc->pt[pidIndex]->pid;
+}
+
+pid_t getppid(int pidIndex){
     return kproc->pt[pidIndex]->ppid;
 }
 

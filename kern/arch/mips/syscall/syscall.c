@@ -149,6 +149,9 @@ syscall(struct trapframe *tf)
         case SYS_getpid:
             err = sys___getpid(&retval);
             break;
+        case SYS_execv:
+            err = sys___execv((const_userptr_t)tf->tf_a0,(userptr_t)tf->tf_a1);
+            break;
 	    /* Add stuff here */
 
 	    default:
