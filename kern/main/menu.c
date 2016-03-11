@@ -95,7 +95,6 @@ cmd_progthread(void *ptr, unsigned long nargs)
 			strerror(result));
 		return;
 	}
-
 	/* NOTREACHED: runprogram only returns on error. */
 }
 
@@ -133,6 +132,9 @@ common_prog(int nargs, char **args)
 		proc_destroy(proc);
 		return result;
 	}
+    
+    userptr_t status = NULL;
+    sys___waitpid(proc->pid,status,0,NULL);
 
 	/*
 	 * The new process will be destroyed when the program exits...

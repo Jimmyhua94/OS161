@@ -344,9 +344,11 @@ proc_setas(struct addrspace *newas)
 }
 
 int getpidIndex(pid_t pid){
-    for(int i = PID_MIN;i < PID_MAX;i++){
-        if(kproc->pt[i]->pid == pid){
+    for(int i = 0;i < PID_MAX;i++){
+        if(kproc->pt[i] != NULL){
+            if(kproc->pt[i]->pid == pid){
             return i;
+            }
         }
     }
     return -1;

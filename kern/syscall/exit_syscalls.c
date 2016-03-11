@@ -1,5 +1,4 @@
 #include <types.h>
-#include <kern/errno.h>
 #include <kern/unistd.h>
 #include <kern/wait.h>
 #include <lib.h>
@@ -7,12 +6,10 @@
 #include <current.h>
 #include <proc.h>
 #include <thread.h>
-#include <addrspace.h>
+#include <synch.h>
 
-void sys__exit(int exitcode)
+int sys___exit(int exitcode)
 {
-    struct addrspace *as;
-    
 	curproc->exited = 1;
     curproc->exitcode = _MKWAIT_EXIT(exitcode);
     
@@ -20,10 +17,6 @@ void sys__exit(int exitcode)
     
     V(curproc->waitsem);
     
-    struct proc* = getproc(pidIndex);
-    
-    if(proc->p_numthreads == 0){
-        exorcise();
-        proc_destroy(curproc);
-    }
+    proc_destroy(curproc);
+    return 0;
 }

@@ -86,7 +86,7 @@ struct proc {
 	
 	int procIndex;		/* curproc's index in kernel pt */
     
-	int pidCounter;		/* kernel proc only, keeps track of pid index count */
+	pid_t pidCounter;		/* kernel proc only, keeps track of pid index count */
 	
     pid_t pid;
     pid_t ppid;

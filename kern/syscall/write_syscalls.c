@@ -25,6 +25,7 @@ int sys___write(int fd, const void *buf, size_t nbytes, int32_t *retval){
     
     struct iovec *iov = kmalloc(sizeof(*iov));
     struct uio *u = kmalloc(sizeof(*u));
+    
     uio_kinit(iov,u,(void *)buf,nbytes,curproc->ft[fd]->offset,UIO_WRITE);
     
     result = VOP_WRITE(curproc->ft[fd]->path,u);
@@ -34,7 +35,7 @@ int sys___write(int fd, const void *buf, size_t nbytes, int32_t *retval){
     
     *retval = nbytes - u->uio_resid;
     struct handler* handle = curproc->ft[fd];
-    handle->offset = handle->offset + *retval;
+    handle->offset += *retval;
 
     kfree(iov);
     kfree(u);

@@ -23,11 +23,11 @@ int sys___fork(struct trapframe *tf,int *retval)
 {
     int spl;
     struct trapframe *tf_child = kmalloc(sizeof(struct trapframe));
-    *tf_child = *tf;
     if (tf_child == NULL)
     {
         return ENOMEM;
     }
+    memcpy(tf_child,tf,sizeof(struct trapframe));
     
     struct proc* child_proc = proc_create_runprogram(curthread->t_name);
     
