@@ -31,6 +31,7 @@ int sys___read(int fd, const void *buf, size_t nbytes, int32_t *retval)
     
     result= VOP_READ(curproc->ft[fd]->path,u);
     
+    //catches EFAULT
     if (result)
     {
         return result;

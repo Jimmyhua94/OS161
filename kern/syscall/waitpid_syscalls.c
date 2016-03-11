@@ -5,6 +5,7 @@ int sys___waitpid(pid_t pid, int *status, int options, int32_t *retval){
     int pidIndex = getpid(pid);
     if(pidIndex != -1){
         if(exited(pidIndex)){
+            //not sure what error handles to implement
             return exitcode(pidIndex);
         }
         //sleep and wait
