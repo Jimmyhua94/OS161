@@ -1,4 +1,6 @@
-cd kern/compile/DUMBVM/
+cd ~/src/os161/kern/conf/
+./config ASST2
+cd ~/src/os161/kern/compile/ASST2/
 bmake clean
 bmake depend
 bmake

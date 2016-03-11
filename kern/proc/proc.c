@@ -48,6 +48,9 @@
 #include <current.h>
 #include <addrspace.h>
 #include <vnode.h>
+#include <kern/fcntl.h>
+#include <kern/unistd.h>
+#include <vfs.h>
 
 /*
  * The process for the kernel; this holds all the kernel-only threads.
@@ -81,6 +84,12 @@ proc_create(const char *name)
 
 	/* VFS fields */
 	proc->p_cwd = NULL;
+    
+    pid_t ppid = -1;
+    bool exited = false;
+    int exitcode = 0;
+    
+    memset(proc->ft,0,sizeof(proc->ft));
 
 	return proc;
 }
@@ -179,6 +188,8 @@ void
 proc_bootstrap(void)
 {
 	kproc = proc_create("[kernel]");
+	memset(kproc->pt,0,sizeof(kproc->pt));
+	kproc->pidCounter = PID_MIN;
 	if (kproc == NULL) {
 		panic("proc_create for kproc failed\n");
 	}
@@ -217,6 +228,14 @@ proc_create_runprogram(const char *name)
 		newproc->p_cwd = curproc->p_cwd;
 	}
 	spinlock_release(&curproc->p_lock);
+	
+	newproc->pid = kproc->pidCounter++;
+	for(newproc->procIndex = 0;newproc->procIndex < PID_MAX; newproc->procIndex++){
+		if(kproc->pt[newproc->procIndex] == NULL){
+			break;
+		}
+	}
+	kproc->pt[newproc->procIndex] = newproc;
 
 	return newproc;
 }
@@ -317,4 +336,25 @@ proc_setas(struct addrspace *newas)
 	proc->p_addrspace = newas;
 	spinlock_release(&proc->p_lock);
 	return oldas;
+}
+
+int getpidIndex(pid_t pid){
+    for(int i = PID_MIN;i < PID_MAX;i++){
+        if(kproc->pt[i]->pid == pid){
+            return i;
+        }
+    }
+    return -1;
+}
+
+int getppid(int pidIndex){
+    return kproc->pt[pidIndex]->ppid;
+}
+
+bool exited(int pidIndex){
+    return kproc->pt[pidIndex]->exited;
+}
+
+int exitcode(int pidIndex){
+    return kproc->pt[pidIndex]->exitcode;
 }

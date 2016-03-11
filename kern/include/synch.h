@@ -159,6 +159,7 @@ struct rwlock {
 	struct spinlock rw_spinlock;
 	struct wchan *rw_wchan;
     struct wchan *rw_rwchan;
+    volatile int rw_rwcount;
 	volatile int rw_rcount;
 	volatile int rw_wcount;
     volatile int rw_write;

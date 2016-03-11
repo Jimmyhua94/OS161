@@ -327,6 +327,7 @@ rwlock_create(const char *name)
     
     rw->rw_lock = lock_create(rw->rw_name);
 	spinlock_init(&rw->rw_spinlock);
+    rw->rw_rwcount = 0;
 	rw->rw_rcount = 0;
 	rw->rw_wcount = 0;
     rw->rw_write = 0;
@@ -352,18 +353,17 @@ void
 rwlock_acquire_read(struct rwlock *rw)
 {
 	KASSERT(rw != NULL);
-
+    spinlock_acquire(&rw->rw_spinlock);
     if (rw->rw_wcount == 0){
-        spinlock_acquire(&rw->rw_spinlock);
+        rw->rw_rwcount++;
         rw->rw_rcount++;
-        spinlock_release(&rw->rw_spinlock);
     }
     else{
-        spinlock_acquire(&rw->rw_spinlock);
+        rw->rw_rwcount++;
         wchan_sleep(rw->rw_rwchan,&rw->rw_spinlock);
         rw->rw_rcount++;
-        spinlock_release(&rw->rw_spinlock);
     }
+    spinlock_release(&rw->rw_spinlock);
 }
 
 void
@@ -374,38 +374,30 @@ rwlock_release_read(struct rwlock *rw)
     
     spinlock_acquire(&rw->rw_spinlock);
     rw->rw_rcount--;
-    spinlock_release(&rw->rw_spinlock);
+    rw->rw_rwcount--;
     
-    if (rw->rw_rcount == 0 && rw->rw_wcount > 0){
-        spinlock_acquire(&rw->rw_spinlock);
+    if (rw->rw_rcount == 0){
         wchan_wakeone(rw->rw_wchan,&rw->rw_spinlock);
-        spinlock_release(&rw->rw_spinlock);
     }
-    else{
-        spinlock_acquire(&rw->rw_spinlock);
-        wchan_wakeall(rw->rw_rwchan,&rw->rw_spinlock);
-        spinlock_release(&rw->rw_spinlock);
-    }
+    spinlock_release(&rw->rw_spinlock);
 }
 
 void
 rwlock_acquire_write(struct rwlock *rw)
 {
 	KASSERT(rw != NULL);
+    spinlock_acquire(&rw->rw_spinlock);
     rw->rw_wcount++;
     if(rw->rw_rcount == 0 && rw->rw_write == 0){
-        spinlock_acquire(&rw->rw_spinlock);
         lock_acquire(rw->rw_lock);
         rw->rw_write = 1;
-        spinlock_release(&rw->rw_spinlock);
     }
     else {
-        spinlock_acquire(&rw->rw_spinlock);
         wchan_sleep(rw->rw_wchan,&rw->rw_spinlock);
         lock_acquire(rw->rw_lock);
         rw->rw_write = 1;
-        spinlock_release(&rw->rw_spinlock);
     }
+    spinlock_release(&rw->rw_spinlock);
     
 }
 
@@ -415,20 +407,16 @@ rwlock_release_write(struct rwlock *rw)
 	KASSERT(rw != NULL);
 	KASSERT(rw->rw_wcount > 0);
 
-    lock_release(rw->rw_lock);
     spinlock_acquire(&rw->rw_spinlock);
+    lock_release(rw->rw_lock);
     rw->rw_wcount--;
     rw->rw_write = 0;
-    spinlock_release(&rw->rw_spinlock);
     
-    if (rw->rw_rcount == 0 && rw->rw_wcount > 0){
-        spinlock_acquire(&rw->rw_spinlock);
-        wchan_wakeone(rw->rw_wchan,&rw->rw_spinlock);
-        spinlock_release(&rw->rw_spinlock);
-    }
-    else{
-        spinlock_acquire(&rw->rw_spinlock);
+    if (rw->rw_rwcount > 0){
         wchan_wakeall(rw->rw_rwchan,&rw->rw_spinlock);
-        spinlock_release(&rw->rw_spinlock);
     }
+    else {
+        wchan_wakeone(rw->rw_wchan,&rw->rw_spinlock);
+    }
+    spinlock_release(&rw->rw_spinlock);
 }

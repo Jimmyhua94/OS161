@@ -37,10 +37,19 @@
  */
 
 #include <spinlock.h>
+#include <limits.h>
 
 struct addrspace;
 struct thread;
 struct vnode;
+
+struct handler {
+    int fd;                     /* File Descriptor, not really needed as index is the same */
+    struct vnode *path;         /* File */
+    off_t offset;                   /* offset for read/write*/
+    int flags;                   /* O_RDONLY, O_WRONLY, O_RDWR falgs */
+    int count;                  /* How many have this file opened */
+};
 
 /*
  * Process structure.
@@ -71,6 +80,19 @@ struct proc {
 	struct vnode *p_cwd;		/* current working directory */
 
 	/* add more material here as needed */
+    /* File Table */
+    struct handler* ft[OPEN_MAX];    /* Array of handlers as File Table */
+	
+	int procIndex;		/* curproc's index in kernel pt */
+    
+	int pidCounter;		/* kernel proc only, keeps track of pid index count */
+	
+    pid_t pid;
+    pid_t ppid;
+    bool exited;
+    int exitcode;
+	
+	struct proc* pt[PID_MAX];		/* Array of proc as proc table in kernproc only*/
 };
 
 /* This is the process structure for the kernel and for kernel-only threads. */
@@ -97,5 +119,12 @@ struct addrspace *proc_getas(void);
 /* Change the address space of the current process, and return the old one. */
 struct addrspace *proc_setas(struct addrspace *);
 
+int getpidIndex(pid_t pid);
+
+int getppid(int pidIndex);
+
+bool exited(int pidIndex);
+
+int exitcode(int pidIndex);
 
 #endif /* _PROC_H_ */
