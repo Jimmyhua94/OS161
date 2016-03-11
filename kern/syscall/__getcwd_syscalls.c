@@ -15,6 +15,12 @@ int sys___getcwd(userptr_t buf,size_t buflen,int32_t *retval){
         return result;
     }
     
+    //error handling
+    if(buf == NULL)
+    {
+        return EFAULT;
+    }
+    
     *retval = buflen - u->uio_resid;
     
     kfree(iov);

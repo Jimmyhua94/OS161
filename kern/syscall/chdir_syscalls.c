@@ -12,6 +12,7 @@ int sys___chdir(const_userptr_t pathname){
     
     result = copyinstr(pathname,path,__PATH_MAX,&size);
     if(result){
+        //kfree(kbuf);
         return result;
     }
     

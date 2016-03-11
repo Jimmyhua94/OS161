@@ -14,6 +14,7 @@ int sys___waitpid(pid_t pid, int *status, int options, int32_t *retval){
             return ECHILD;
         }
         if(exited(pidIndex)){
+            //not sure what error handles to implement
             return exitcode(pidIndex);
         }
         P(curproc->waitsem);

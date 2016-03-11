@@ -20,6 +20,7 @@ int sys___open(const_userptr_t filename, int flags,mode_t mode,int32_t *retval){
     
     result = copyinstr(filename,filepath, PATH_MAX,&size);
     
+    //handles ENODEV, ENOTDIR, ENOENT, ENOENT, (maybe?)EEXIST, EFAULT 
     if (result){
         return result;
     }
