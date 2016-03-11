@@ -1,0 +1,5 @@
+cd kern/compile/DUMBVM/
+bmake clean
+bmake depend
+bmake
+bmake install

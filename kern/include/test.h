@@ -160,6 +160,8 @@ void matchmaker(uint32_t);
  * stoplight.c.
  */
 
+int quadrants(int, int, int);
+struct lock* getLock(int);
 void gostraight(uint32_t, uint32_t);
 void turnleft(uint32_t, uint32_t);
 void turnright(uint32_t, uint32_t);
