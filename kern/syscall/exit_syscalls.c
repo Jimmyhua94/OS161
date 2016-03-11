@@ -15,16 +15,8 @@ void sys__exit(int exitcode)
     
 	curproc->exited = 1;
     curproc->exitcode = _MKWAIT_EXIT(exitcode);
+
+    thread_exit();
     
-    //KASSERT
-    // as_deactivate();
-    
-    // as = curproc_setas(NULL);
-    // as_destroy(as);
-    
-    // proc_remthread(curthread);
-    
-    // proc_destroy(p);
-    
-    // thread_exit();
+    //wakeup ppid
 }

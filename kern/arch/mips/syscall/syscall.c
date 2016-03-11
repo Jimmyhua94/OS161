@@ -146,6 +146,9 @@ syscall(struct trapframe *tf)
 		case SYS_dup2:
 			err = sys___dup2(tf->tf_a0, tf->tf_a1, &retval);
 			break;
+        case SYS_getpid:
+            err = sys___getpid(&retval);
+            break;
 	    /* Add stuff here */
 
 	    default:

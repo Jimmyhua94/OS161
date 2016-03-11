@@ -392,6 +392,7 @@ file      syscall/chdir_syscalls.c
 file      syscall/lseek_syscalls.c
 file      syscall/read_syscalls.c
 file	  syscall/dup2_syscalls.c
+file      syscall/getpid_syscalls.c
 
 #
 # Startup and initialization
