@@ -85,15 +85,11 @@ struct proc {
     struct handler* ft[OPEN_MAX];    /* Array of handlers as File Table */
 	
 	int procIndex;		/* curproc's index in kernel pt */
-    
-	pid_t pidCounter;		/* kernel proc only, keeps track of pid index count */
 	
     pid_t pid;
     pid_t ppid;
     bool exited;
     int exitcode;
-	
-	struct proc* pt[PID_MAX];		/* Array of proc as proc table in kernproc only*/
 };
 
 /* This is the process structure for the kernel and for kernel-only threads. */

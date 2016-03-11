@@ -57,6 +57,11 @@
  */
 struct proc *kproc;
 
+
+struct proc** pt;		//proc table
+
+pid_t pidCounter;		/* kernel proc only, keeps track of pid index count */
+
 /*
  * Create a proc structure.
  */
@@ -176,7 +181,7 @@ proc_destroy(struct proc *proc)
 		as_destroy(as);
 	}
     
-    kproc->pt[proc->procIndex] = NULL;
+    pt[proc->procIndex] = NULL;
 
 	KASSERT(proc->p_numthreads == 0);
 	spinlock_cleanup(&proc->p_lock);
@@ -192,9 +197,9 @@ void
 proc_bootstrap(void)
 {
 	kproc = proc_create("[kernel]");
-	memset(kproc->pt,0,sizeof(kproc->pt));
-	kproc->pidCounter = PID_MIN;
-	kproc->pidCounter = PID_MIN;
+	pt = kmalloc(32*4);
+	memset(pt,0,sizeof(pt));
+	pidCounter = PID_MIN;
 	if (kproc == NULL) {
 		panic("proc_create for kproc failed\n");
 	}
@@ -234,13 +239,13 @@ proc_create_runprogram(const char *name)
 	}
 	spinlock_release(&curproc->p_lock);
 	
-	newproc->pid = kproc->pidCounter++;
+	newproc->pid = pidCounter++;
 	for(newproc->procIndex = 0;newproc->procIndex < PID_MAX; newproc->procIndex++){
-		if(kproc->pt[newproc->procIndex] == NULL){
+		if(pt[newproc->procIndex] == NULL){
 			break;
 		}
 	}
-	kproc->pt[newproc->procIndex] = newproc;
+	pt[newproc->procIndex] = newproc;
 
 	return newproc;
 }
@@ -345,8 +350,8 @@ proc_setas(struct addrspace *newas)
 
 int getpidIndex(pid_t pid){
     for(int i = 0;i < PID_MAX;i++){
-        if(kproc->pt[i] != NULL){
-            if(kproc->pt[i]->pid == pid){
+        if(pt[i] != NULL){
+            if(pt[i]->pid == pid){
             return i;
             }
         }
@@ -355,21 +360,21 @@ int getpidIndex(pid_t pid){
 }
 
 struct proc* getproc(int pidIndex){
-    return kproc->pt[pidIndex];
+    return pt[pidIndex];
 }
 
 pid_t getpid(int pidIndex){
-    return kproc->pt[pidIndex]->pid;
+    return pt[pidIndex]->pid;
 }
 
 pid_t getppid(int pidIndex){
-    return kproc->pt[pidIndex]->ppid;
+    return pt[pidIndex]->ppid;
 }
 
 bool exited(int pidIndex){
-    return kproc->pt[pidIndex]->exited;
+    return pt[pidIndex]->exited;
 }
 
 int exitcode(int pidIndex){
-    return kproc->pt[pidIndex]->exitcode;
+    return pt[pidIndex]->exitcode;
 }

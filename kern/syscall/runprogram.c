@@ -108,9 +108,6 @@ runprogram(char *progname)
     if (result){
         return result;
     }
-    // struct handler handler;
-    //struct handler* handle;
-    // handle = &handler;
     struct handler* handle = kmalloc(sizeof(*handle));
     handle->path = stdv;
     handle->offset = 0;

@@ -23,21 +23,19 @@ int sys___write(int fd, const void *buf, size_t nbytes, int32_t *retval){
     
     int result;
     
-    struct iovec *iov = kmalloc(sizeof(*iov));
-    struct uio *u = kmalloc(sizeof(*u));
+    struct iovec iov;
+    struct uio u;
     
-    uio_kinit(iov,u,(void *)buf,nbytes,curproc->ft[fd]->offset,UIO_WRITE);
+    uio_kinit(&iov,&u,(void *)buf,nbytes,curproc->ft[fd]->offset,UIO_WRITE);
     
-    result = VOP_WRITE(curproc->ft[fd]->path,u);
+    result = VOP_WRITE(curproc->ft[fd]->path,&u);
     if (result){
         return result;
     }
     
-    *retval = nbytes - u->uio_resid;
+    *retval = nbytes - u.uio_resid;
     struct handler* handle = curproc->ft[fd];
     handle->offset += *retval;
 
-    kfree(iov);
-    kfree(u);
     return 0;
 }
