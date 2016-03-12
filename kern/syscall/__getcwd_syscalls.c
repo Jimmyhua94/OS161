@@ -17,7 +17,7 @@ int sys___getcwd(userptr_t buf,size_t buflen,int32_t *retval){
     struct uio u;
     uio_kinit(&iov,&u,(void *)buf,buflen,0,UIO_READ);
     
-    result = vfs_getcwd(u);
+    result = vfs_getcwd(&u);
     if(result){
         return result;
     }
