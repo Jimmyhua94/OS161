@@ -14,7 +14,6 @@ void child_forkentry(void *tf, unsigned long addrspace){
     child_tf.tf_v0 = 0;
     child_tf.tf_a3 = 0;
     child_tf.tf_epc += 4;
-    kprintf("USER PROC\n");
     curproc->p_addrspace = (struct addrspace*)addrspace;
     as_activate();
     mips_usermode(&child_tf);
