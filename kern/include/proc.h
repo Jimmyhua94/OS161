@@ -38,10 +38,17 @@
 
 #include <spinlock.h>
 #include <limits.h>
+#include <synch.h>
 
 struct addrspace;
 struct thread;
 struct vnode;
+
+extern struct proc** pt;
+
+extern pid_t pidCounter;
+
+extern struct lock* pidLock;
 
 struct handler {
     int fd;                     /* File Descriptor, not really needed as index is the same */

@@ -57,10 +57,13 @@
  */
 struct proc *kproc;
 
+struct lock* pidLock;
 
 struct proc** pt;		//proc table
 
 pid_t pidCounter;		/* kernel proc only, keeps track of pid index count */
+
+bool bsDone;
 
 /*
  * Create a proc structure.
@@ -89,7 +92,17 @@ proc_create(const char *name)
 
 	/* VFS fields */
 	proc->p_cwd = NULL;
-    
+	
+	//lock_acquire(pidLock);
+	// proc->pid = pidCounter++;
+	// for(proc->procIndex = 0;proc->procIndex < PID_MAX; proc->procIndex++){
+		// if(pt[proc->procIndex] == NULL){
+			// break;
+		// }
+	// }
+	// pt[proc->procIndex] = proc;
+	//lock_release(pidLock);
+	
     proc->ppid = -1;
     proc->exited = false;
     proc->exitcode = 0;
@@ -197,12 +210,14 @@ void
 proc_bootstrap(void)
 {
 	kproc = proc_create("[kernel]");
-	pt = kmalloc(32*4);
+	//pidLock = lock_create("pidLock");
+	pt = kmalloc(128*(sizeof(struct proc*)));
 	memset(pt,0,sizeof(pt));
 	pidCounter = PID_MIN;
 	if (kproc == NULL) {
 		panic("proc_create for kproc failed\n");
 	}
+	bsDone = true;
 }
 
 /*
