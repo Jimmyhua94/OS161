@@ -45,11 +45,15 @@
 #define VM_FAULT_WRITE       1    /* A write was attempted */
 #define VM_FAULT_READONLY    2    /* A write to a readonly page was attempted*/
 
-unsigned int coremap_bytes;
+extern size_t coremap_bytes;
+
+extern struct coremap_entry* coremap;
 
 struct coremap_entry{
 	struct addrspace * as;
-	vaddr_t va;
+	vaddr_t vaddr;
+    
+    size_t nsize;
 	
 	page_state_t state;
 }

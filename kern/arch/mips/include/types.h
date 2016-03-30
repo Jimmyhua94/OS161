@@ -43,4 +43,10 @@
 typedef __u32 paddr_t;
 typedef __u32 vaddr_t;
 
+typedef __i8 page_state_t;
+#define free  0
+#define dirty 1
+#define clean 2
+#define fixed 3
+
 #endif /* _MIPS_TYPES_H_ */
