@@ -4,6 +4,9 @@
 #include <addrspace.h>
 #include <vm.h>
 #include <proc.h>
+#include <spinlock.h>
+#include <cpu.h>
+#include <current.h>
 
 #define VM_STACKPAGES	64
 
@@ -11,22 +14,22 @@ static struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
 
 bool bootStrapped = false;
 
-paddr_t firstpaddr;
-paddr_t lastpaddr;
 int max_pages;
 int fixed_pages;
 
+size_t coremap_bytes;
+struct coremap_entry* coremap;
+
+// struct lock* cm_lock;
+
 void vm_bootstrap(void){
 	coremap_bytes = 0;
-    
-    firstpaddr = ram_getfirstfree();
-    lastpaddr = ram_getsize();
     max_pages = lastpaddr / PAGE_SIZE;  //Should get rounded down because of int
     coremap = (struct coremap_entry*)PADDR_TO_KVADDR(firstpaddr);
     fixed_pages = firstpaddr;
-    freeaddr = firstpaddr + max_pages * sizeof(struct coremap_entry);    //Gets space for coremap
+    firstpaddr += max_pages * sizeof(struct coremap_entry);    //Gets space for coremap
     fixed_pages /= PAGE_SIZE;
-    for(int i = 0,i < fixed_pages;i++){
+    for(int i = 0;i < fixed_pages;i++){
         coremap[i].state = fixed;
     }
     for(int i = fixed_pages;i < max_pages;i++){
@@ -36,7 +39,9 @@ void vm_bootstrap(void){
 }
 
 int vm_fault(int faulttype, vaddr_t faultaddress){
-	
+	(void)faulttype;
+	(void)faultaddress;
+	return 0;
 }
 
 static
@@ -55,7 +60,7 @@ vm_can_sleep(void)
 vaddr_t alloc_kpages(unsigned npages){
     if(!bootStrapped){
         paddr_t paddr;
-        dumbvm_can_sleep();
+        vm_can_sleep();
         spinlock_acquire(&stealmem_lock);
         paddr = ram_stealmem(npages);
         spinlock_release(&stealmem_lock);
@@ -64,22 +69,22 @@ vaddr_t alloc_kpages(unsigned npages){
         }
         return PADDR_TO_KVADDR(paddr);
     }
-	paddr_t paddr = 0;
     int index = 0;
 	for(int i = fixed_pages;i < max_pages;i++){
         if(coremap[i].state == free){
             int freepages = 1;
-            for(int j = 0;j < npages-1;j++){
+            for(int j = 0;j < (int)npages-1;j++){
                 if(coremap[i].state != free){
                     break;
                 }
                 freepages++;
             }
-            if(freepages == npages){
-                for(int j = i+1;j < npages;j++){
+            if(freepages == (int)npages){
+                for(int j = i+1;j < (int)npages;j++){
                     coremap[j].state = dirty;
                     coremap[i].nsize = 0;
                 }
+				kprintf("Alloc\n");
                 coremap[i].state = dirty;
                 coremap[i].nsize = npages*PAGE_SIZE;
                 coremap[i].vaddr = PADDR_TO_KVADDR(i*PAGE_SIZE);
@@ -101,18 +106,21 @@ void free_kpages(vaddr_t vaddr){
     if(bootStrapped){
         paddr_t paddr = KVADDR_TO_PADDR(vaddr);
         int index = paddr/PAGE_SIZE;
+		
+		kprintf("%d FREEING\n",coremap[index].state);
         
-        kassert(coremap[index].state != free);
-        kassert(coremap[index].nsize != 0);
-        
-        if(coremap[index].vaddr == vaddr){
-            int pages = coremap[index].nsize/PAGE_SIZE;
-            for(int i = 0;i < pages;i++){
-                coremap[index+i].state = free;
-            }
-            coremap_bytes -= coremap[index].nsize;
-            coremap[index].nsize = 0;
-        }
+        // if(coremap[index].vaddr == vaddr){
+			// if(coremap[index].state != free && coremap[index].nsize != 0){
+				// int pages = coremap[index].nsize/PAGE_SIZE;
+				// for(int i = 0;i < pages;i++){
+					// coremap[index+i].state = free;
+				// }
+				// coremap_bytes -= coremap[index].nsize;
+				// coremap[index].nsize = 0;
+				// kprintf("%d FREEED\n",coremap[index].state);
+
+			// }
+        // }
     }
 }
 
@@ -124,6 +132,6 @@ void vm_tlbshootdown_all(void){
 	
 }
 
-void vm_tlbshootdown(cons struct tlbshootdown *){
-	void();
+void vm_tlbshootdown(const struct tlbshootdown *ts){
+	(void)ts;
 }

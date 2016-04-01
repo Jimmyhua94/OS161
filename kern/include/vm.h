@@ -49,6 +49,9 @@ extern size_t coremap_bytes;
 
 extern struct coremap_entry* coremap;
 
+extern paddr_t firstpaddr;  /* address of first free physical page */
+extern paddr_t lastpaddr;
+
 struct coremap_entry{
 	struct addrspace * as;
 	vaddr_t vaddr;
@@ -56,7 +59,7 @@ struct coremap_entry{
     size_t nsize;
 	
 	page_state_t state;
-}
+};
 
 /* Initialization function */
 void vm_bootstrap(void);
@@ -77,7 +80,7 @@ unsigned int coremap_used_bytes(void);
 
 /* TLB shootdown handling called from interprocessor_interrupt */
 void vm_tlbshootdown_all(void);
-void vm_tlbshootdown(const struct tlbshootdown *);
+void vm_tlbshootdown(const struct tlbshootdown *ts);
 
 
 #endif /* _VM_H_ */

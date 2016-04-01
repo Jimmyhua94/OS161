@@ -1,6 +1,6 @@
 cd ~/src/os161/kern/conf/
-./config ASST2
-cd ~/src/os161/kern/compile/ASST2/
+./config ASST3
+cd ~/src/os161/kern/compile/ASST3/
 bmake clean
 bmake depend
 bmake
