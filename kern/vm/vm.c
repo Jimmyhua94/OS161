@@ -84,7 +84,6 @@ vaddr_t alloc_kpages(unsigned npages){
                     coremap[j].state = dirty;
                     coremap[i].nsize = 0;
                 }
-				kprintf("Alloc\n");
                 coremap[i].state = dirty;
                 coremap[i].nsize = npages*PAGE_SIZE;
                 coremap[i].vaddr = PADDR_TO_KVADDR(i*PAGE_SIZE);
@@ -106,21 +105,17 @@ void free_kpages(vaddr_t vaddr){
     if(bootStrapped){
         paddr_t paddr = KVADDR_TO_PADDR(vaddr);
         int index = paddr/PAGE_SIZE;
-		
-		kprintf("%d FREEING\n",coremap[index].state);
         
-        // if(coremap[index].vaddr == vaddr){
-			// if(coremap[index].state != free && coremap[index].nsize != 0){
-				// int pages = coremap[index].nsize/PAGE_SIZE;
-				// for(int i = 0;i < pages;i++){
-					// coremap[index+i].state = free;
-				// }
-				// coremap_bytes -= coremap[index].nsize;
-				// coremap[index].nsize = 0;
-				// kprintf("%d FREEED\n",coremap[index].state);
-
-			// }
-        // }
+        if(coremap[index].vaddr == vaddr){
+			if(coremap[index].state != free && coremap[index].nsize != 0){
+				int pages = coremap[index].nsize/PAGE_SIZE;
+				for(int i = 0;i < pages;i++){
+					coremap[index+i].state = free;
+				}
+				coremap_bytes -= coremap[index].nsize;
+				coremap[index].nsize = 0;
+			}
+        }
     }
 }
 
