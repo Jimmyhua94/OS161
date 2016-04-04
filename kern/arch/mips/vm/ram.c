@@ -31,12 +31,19 @@
 #include <lib.h>
 #include <vm.h>
 #include <mainbus.h>
+#include <spinlock.h>
 
 
 vaddr_t firstfree;   /* first free virtual address; set by start.S */
 
 paddr_t firstpaddr;  /* address of first free physical page */
 paddr_t lastpaddr;   /* one past end of last free physical page */
+
+struct spinlock coremap_lock;
+int max_pages;
+int fixed_pages;
+size_t coremap_bytes;
+struct coremap_entry* coremap;
 
 /*
  * Called very early in system boot to figure out how much physical
@@ -71,6 +78,21 @@ ram_bootstrap(void)
 
 	kprintf("%uk physical memory available\n",
 		(lastpaddr-firstpaddr)/1024);
+		
+	spinlock_init(&coremap_lock);
+	coremap_bytes = 0;
+    max_pages = lastpaddr / PAGE_SIZE;  //Should get rounded down because of int
+    coremap = (struct coremap_entry*)PADDR_TO_KVADDR(firstpaddr);
+    fixed_pages = firstpaddr;
+    fixed_pages += max_pages * sizeof(struct coremap_entry);    //Gets space for coremap
+	fixed_pages = ROUNDUP(fixed_pages,PAGE_SIZE);
+    fixed_pages /= PAGE_SIZE;
+    for(int i = 0;i < fixed_pages;i++){
+        coremap[i].state = fixed;
+    }
+    for(int i = fixed_pages;i < max_pages;i++){
+        coremap[i].state = free;
+    }
 }
 
 /*

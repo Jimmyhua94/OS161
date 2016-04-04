@@ -49,8 +49,16 @@ extern size_t coremap_bytes;
 
 extern struct coremap_entry* coremap;
 
+extern struct spinlock coremap_lock;
+
 extern paddr_t firstpaddr;  /* address of first free physical page */
 extern paddr_t lastpaddr;
+
+extern int max_pages;
+extern int fixed_pages;
+
+extern size_t coremap_bytes;
+extern struct coremap_entry* coremap;
 
 struct coremap_entry{
 	struct addrspace * as;
