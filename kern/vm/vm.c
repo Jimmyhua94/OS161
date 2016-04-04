@@ -12,6 +12,8 @@
 
 static struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
 
+static struct spinlock coremap_lock = SPINLOCK_INITIALIZER;
+
 bool bootStrapped = false;
 
 int max_pages;
@@ -70,33 +72,35 @@ vaddr_t alloc_kpages(unsigned npages){
         return PADDR_TO_KVADDR(paddr);
     }
     int index = 0;
+    spinlock_acquire(&coremap_lock);
 	for(int i = fixed_pages;i < max_pages;i++){
         if(coremap[i].state == free){
             int freepages = 1;
-            for(int j = 0;j < (int)npages-1;j++){
-                if(coremap[i].state != free){
+            for(int j = 1;j < (int)npages;j++){
+                if(coremap[i+j].state != free){
                     break;
                 }
                 freepages++;
             }
             if(freepages == (int)npages){
-                for(int j = i+1;j < (int)npages;j++){
-                    coremap[j].state = dirty;
-                    coremap[i].nsize = 0;
+                for(int j = 1;j < (int)npages;j++){
+                    coremap[i+j].state = dirty;
+                    coremap[i+j].nsize = 0;
                 }
                 coremap[i].state = dirty;
                 coremap[i].nsize = npages*PAGE_SIZE;
                 coremap[i].vaddr = PADDR_TO_KVADDR(i*PAGE_SIZE);
+                coremap_bytes += (npages*PAGE_SIZE);
                 index = i;
                 break;
             }
         }
     }
+    // kprintf("%d bytes alloc\n",coremap_bytes);
+    spinlock_release(&coremap_lock);
     if(index == 0){
-        return 0;
+        return -1;
     }
-    
-	coremap_bytes += (npages*PAGE_SIZE);
 	
 	return coremap[index].vaddr;
 }
@@ -106,6 +110,7 @@ void free_kpages(vaddr_t vaddr){
         paddr_t paddr = KVADDR_TO_PADDR(vaddr);
         int index = paddr/PAGE_SIZE;
         
+        spinlock_acquire(&coremap_lock);
         if(coremap[index].vaddr == vaddr){
 			if(coremap[index].state != free && coremap[index].nsize != 0){
 				int pages = coremap[index].nsize/PAGE_SIZE;
@@ -113,9 +118,14 @@ void free_kpages(vaddr_t vaddr){
 					coremap[index+i].state = free;
 				}
 				coremap_bytes -= coremap[index].nsize;
+                // kprintf("%d bytes free\n",coremap_bytes);
 				coremap[index].nsize = 0;
 			}
+            else{
+                coremap[index].state = free;
+            }
         }
+        spinlock_release(&coremap_lock);
     }
 }
 
