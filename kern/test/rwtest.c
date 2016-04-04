@@ -32,8 +32,8 @@ rtestthread(void *junk, unsigned long num)
     kprintf_n("read thread start...\n");
     rwlock_acquire_read(testrw);
     kprintf_n("read thread acquired...\n");
-    kprintf_t("read testval1: %d\n",testval1);
-    kprintf_t("read testval2: %d\n",testval2);
+    kprintf_t("read testval1: %lu\n",testval1);
+    kprintf_t("read testval2: %lu\n",testval2);
     if (testval1 != testval2)
         goto fail;
     rwlock_release_read(testrw);
@@ -57,9 +57,9 @@ wtestthread(void *junk, unsigned long num)
     kprintf_n("write thread start...\n");
     rwlock_acquire_write(testrw);
     kprintf_n("write thread acquired...\n");
-    kprintf_t("testval1: %d\n",testval1);
+    kprintf_t("testval1: %lu\n",testval1);
     testval1++;
-    kprintf_t("write testval1++: %d\n",testval1);
+    kprintf_t("write testval1++: %lu\n",testval1);
     if (testval1 != ++testval2){
         goto fail;
     }
