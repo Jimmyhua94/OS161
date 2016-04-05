@@ -48,7 +48,7 @@ extern struct proc** pt;
 
 extern pid_t pidCounter;
 
-extern struct lock* pidLock;
+extern struct spinlock pid_lock;
 
 struct handler {
     int fd;                     /* File Descriptor, not really needed as index is the same */
@@ -78,7 +78,9 @@ struct handler {
 struct proc {
 	char *p_name;			/* Name of this process */
 	struct spinlock p_lock;		/* Lock for this structure */
-    struct semaphore *waitsem;
+    // struct semaphore *waitsem;
+	struct cv *waitlock;
+	struct lock *lock;
 	unsigned p_numthreads;		/* Number of threads in this process */
 
 	/* VM */

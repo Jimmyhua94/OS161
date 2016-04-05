@@ -18,14 +18,20 @@ int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
     
     int pidIndex = getpidIndex(pid);
     if(pidIndex != -1){
-        getproc(pidIndex)->waitsem = sem_create("waitsem",0);
+        //getproc(pidIndex)->waitsem = sem_create("waitsem",0);
+		getproc(pidIndex)->waitlock = cv_create("waitlock");
+		getproc(pidIndex)->lock = lock_create("waitlocklock");
         if(getppid(pidIndex) != curproc->pid){
             return ECHILD;
         }
         if(!exited(pidIndex)){
-        P(getproc(pidIndex)->waitsem);
-        *(int*)status = exitcode(pidIndex);
-        *retval = pid;
+			lock_acquire(getproc(pidIndex)->lock);
+			cv_wait(getproc(pidIndex)->waitlock,getproc(pidIndex)->lock);
+			lock_release(getproc(pidIndex)->lock);
+			//P(getproc(pidIndex)->waitsem);
+			*(int*)status = exitcode(pidIndex);
+			*retval = pid;
+			proc_destroy(getproc(pidIndex));
         }
         return 0;
     }

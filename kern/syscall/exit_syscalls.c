@@ -15,8 +15,9 @@ int sys___exit(int exitcode)
     
     thread_exit();
     
-    V(curproc->waitsem);
-    
-    proc_destroy(curproc);
+	if(curproc->lock != NULL)
+		cv_broadcast(curproc->waitlock,curproc->lock);
+    else
+		proc_destroy(curproc);
     return 0;
 }

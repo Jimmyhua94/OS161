@@ -57,7 +57,7 @@
  */
 struct proc *kproc;
 
-struct lock* pidLock;
+struct spinlock pid_lock;
 
 struct proc** pt;		//proc table
 
@@ -93,21 +93,22 @@ proc_create(const char *name)
 	/* VFS fields */
 	proc->p_cwd = NULL;
 	
-	//lock_acquire(pidLock);
-	// proc->pid = pidCounter++;
-	// for(proc->procIndex = 0;proc->procIndex < PID_MAX; proc->procIndex++){
-		// if(pt[proc->procIndex] == NULL){
-			// break;
-		// }
-	// }
-	// pt[proc->procIndex] = proc;
-	//lock_release(pidLock);
+	spinlock_acquire(&pid_lock);
+	proc->pid = pidCounter++;
+	for(proc->procIndex = 0;proc->procIndex < PID_MAX; proc->procIndex++){
+		if(pt[proc->procIndex] == NULL){
+			break;
+		}
+	}
+	pt[proc->procIndex] = proc;
+	spinlock_release(&pid_lock);
 	
     proc->ppid = -1;
     proc->exited = false;
     proc->exitcode = 0;
-    
-    proc->waitsem = NULL;
+	
+	proc->waitlock = NULL;
+	proc->lock = NULL;
     
     memset(proc->ft,0,sizeof(proc->ft));
 
@@ -209,11 +210,12 @@ proc_destroy(struct proc *proc)
 void
 proc_bootstrap(void)
 {
-	kproc = proc_create("[kernel]");
-	//pidLock = lock_create("pidLock");
+	spinlock_init(&pid_lock);
+	pidCounter = PID_MIN;
 	pt = kmalloc(128*(sizeof(struct proc*)));
 	memset(pt,0,sizeof(pt));
-	pidCounter = PID_MIN;
+	
+	kproc = proc_create("[kernel]");
 	if (kproc == NULL) {
 		panic("proc_create for kproc failed\n");
 	}
@@ -253,14 +255,6 @@ proc_create_runprogram(const char *name)
 		newproc->p_cwd = curproc->p_cwd;
 	}
 	spinlock_release(&curproc->p_lock);
-	
-	newproc->pid = pidCounter++;
-	for(newproc->procIndex = 0;newproc->procIndex < PID_MAX; newproc->procIndex++){
-		if(pt[newproc->procIndex] == NULL){
-			break;
-		}
-	}
-	pt[newproc->procIndex] = newproc;
 
 	return newproc;
 }

@@ -35,21 +35,19 @@ proc_create(const char *name)
 	/* VFS fields */
 	proc->p_cwd = NULL;
 	
-	//lock_acquire(pidLock);
-	// proc->pid = pidCounter++;
-	// for(proc->procIndex = 0;proc->procIndex < PID_MAX; proc->procIndex++){
-		// if(pt[proc->procIndex] == NULL){
-			// break;
-		// }
-	// }
-	// pt[proc->procIndex] = proc;
-	//lock_release(pidLock);
+	spinlock_acquire(&pid_lock);
+	proc->pid = pidCounter++;
+	for(proc->procIndex = 0;proc->procIndex < PID_MAX; proc->procIndex++){
+		if(pt[proc->procIndex] == NULL){
+			break;
+		}
+	}
+	pt[proc->procIndex] = proc;
+	spinlock_release(&pid_lock);
     
     proc->ppid = -1;
     proc->exited = false;
     proc->exitcode = 0;
-    
-    proc->waitsem = NULL;
     
     memset(proc->ft,0,sizeof(proc->ft));
 
@@ -57,11 +55,11 @@ proc_create(const char *name)
 }
 
 void child_forkentry(void *tf, unsigned long addrspace){
+	curproc->p_addrspace = (struct addrspace*)addrspace;
     struct trapframe child_tf = *(struct trapframe*)tf;
     child_tf.tf_v0 = 0;
     child_tf.tf_a3 = 0;
     child_tf.tf_epc += 4;
-    curproc->p_addrspace = (struct addrspace*)addrspace;
     //as_activate();
     mips_usermode(&child_tf);
 }
@@ -69,12 +67,12 @@ void child_forkentry(void *tf, unsigned long addrspace){
 int sys___fork(struct trapframe *tf,int *retval)
 {
     //int spl;
-    // struct trapframe *tf_child = kmalloc(sizeof(struct trapframe));
-    // if (tf_child == NULL)
-    // {
-        // return ENOMEM;
-    // }
-    // memcpy(tf_child,tf,sizeof(struct trapframe));
+    struct trapframe *tf_child = kmalloc(sizeof(struct trapframe));
+    if (tf_child == NULL)
+    {
+        return ENOMEM;
+    }
+    memcpy(tf_child,tf,sizeof(struct trapframe));
     
     struct proc* child_proc = proc_create(curthread->t_name);
     
@@ -86,7 +84,7 @@ int sys___fork(struct trapframe *tf,int *retval)
     }
     
     // spl = splhigh();
-    result = thread_fork(curthread->t_name, child_proc, child_forkentry, tf, (unsigned long)child_addrspace);
+    result = thread_fork(curthread->t_name, child_proc, child_forkentry, tf_child, (unsigned long)child_addrspace);
     // splx(spl);
     if (result)
     {
