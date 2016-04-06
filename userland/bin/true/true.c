@@ -29,6 +29,7 @@
 
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 /*
  * true - succeed.
@@ -38,5 +39,20 @@ int
 main(void)
 {
 	/* Just exit with success. */
-	exit(0);
+	
+	int pid = fork();
+	if(pid == 0){
+		printf("a%d--child\n",pid);
+	}
+	else{
+		printf("b%d--parent\n",pid);
+	}
+	while(1){
+	if(pid == 0){
+		printf("..");
+	}
+	else{
+		printf("--");
+	}
+	}
 }

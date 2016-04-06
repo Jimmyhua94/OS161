@@ -9,6 +9,8 @@
 #include <mips/trapframe.h>
 #include <spl.h>
 #include <synch.h>
+#include <vnode.h>
+
 
 static
 struct proc *
@@ -55,12 +57,12 @@ proc_create(const char *name)
 }
 
 void child_forkentry(void *tf, unsigned long addrspace){
-	curproc->p_addrspace = (struct addrspace*)addrspace;
+	// curproc->p_addrspace = (struct addrspace*)addrspace;
+	(void)addrspace;
     struct trapframe child_tf = *(struct trapframe*)tf;
     child_tf.tf_v0 = 0;
     child_tf.tf_a3 = 0;
     child_tf.tf_epc += 4;
-    //as_activate();
     mips_usermode(&child_tf);
 }
 
@@ -74,17 +76,26 @@ int sys___fork(struct trapframe *tf,int *retval)
     }
     memcpy(tf_child,tf,sizeof(struct trapframe));
     
-    struct proc* child_proc = proc_create(curthread->t_name);
-    
+    struct proc* child_proc = proc_create("test");
+    child_proc->ppid = curproc->pid;
+	child_proc->p_cwd = curproc->p_cwd;
+	VOP_INCREF(child_proc->p_cwd);
+	for(int i = 0;i < OPEN_MAX;i++){
+		if(curproc->ft[i]!= NULL){
+			curproc->ft[i]->count++;
+		}
+		child_proc->ft[i] = curproc->ft[i];
+	}
     struct addrspace* child_addrspace;
     int result = as_copy(curproc->p_addrspace, &child_addrspace);
     if(result)
     {
         return result;
     }
+	child_proc->p_addrspace = child_addrspace;
     
     // spl = splhigh();
-    result = thread_fork(curthread->t_name, child_proc, child_forkentry, tf_child, (unsigned long)child_addrspace);
+    result = thread_fork("test", child_proc, child_forkentry, tf_child, 0);
     // splx(spl);
     if (result)
     {
