@@ -46,13 +46,15 @@ main(void)
 	}
 	else{
 		printf("b%d--parent\n",pid);
+        waitpid(pid, NULL, 0);
 	}
-	while(1){
-	if(pid == 0){
-		printf("..");
-	}
-	else{
-		printf("--");
-	}
-	}
+	// while(1){
+        // if(pid == 0){
+            // printf("..");
+        // }
+        // else{
+            // printf("--");
+        // }
+	// }
+    exit(0);
 }

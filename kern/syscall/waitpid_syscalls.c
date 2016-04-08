@@ -8,7 +8,7 @@
 #include <thread.h>
 #include <synch.h>
 #include <kern/errno.h>
-
+#include <copyinout.h>
 
 int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
     (void)options;
@@ -18,17 +18,23 @@ int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
     
     int pidIndex = getpidIndex(pid);
     if(pidIndex != -1){
-		getproc(pidIndex)->waitlock = cv_create("waitlock");
-		getproc(pidIndex)->lock = lock_create("waitlocklock");
-        if(getppid(pidIndex) != curproc->pid){
+        struct proc* child_proc = getproc(pidIndex);
+		child_proc->waitlock = cv_create("waitlock");
+		child_proc->lock = lock_create("waitlocklock");
+        if(child_proc->ppid != curproc->pid){
             return ECHILD;
         }
-        if(!exited(pidIndex)){
-			lock_acquire(getproc(pidIndex)->lock);
-			getproc(pidIndex)->waiting = true;
-			cv_wait(getproc(pidIndex)->waitlock,getproc(pidIndex)->lock);
-			lock_release(getproc(pidIndex)->lock);
-			*(int*)status = exitcode(pidIndex);
+        if(!(child_proc->exited)){
+			lock_acquire(child_proc->lock);
+			child_proc->waiting = true;
+			cv_wait(child_proc->waitlock,child_proc->lock);
+			lock_release(child_proc->lock);
+            // *(int*)status = child_proc->exitcode;
+            int exitcode = child_proc->exitcode;
+            int result = copyout(&exitcode,status,sizeof(int));
+            if (result){
+                return result;
+            }
 			*retval = pid;
         }
         return 0;

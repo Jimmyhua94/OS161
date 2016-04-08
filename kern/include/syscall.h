@@ -69,7 +69,7 @@ int sys___dup2(int oldfd, int newfd, int32_t *retval);
 int sys___getpid(int32_t *retval);
 int sys___execv(const_userptr_t program, userptr_t args);
 int sys___fork(struct trapframe *tf,int *retval);
-int sys___exit(int exitcode);
+void sys___exit(int exitcode);
 int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval);
 
 #endif /* _SYSCALL_H_ */
