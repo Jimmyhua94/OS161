@@ -106,6 +106,7 @@ proc_create(const char *name)
     proc->ppid = -1;
     proc->exited = false;
     proc->exitcode = 0;
+	proc->waiting = false;
 	
 	proc->waitlock = NULL;
 	proc->lock = NULL;
@@ -254,6 +255,7 @@ proc_create_runprogram(const char *name)
 		VOP_INCREF(curproc->p_cwd);
 		newproc->p_cwd = curproc->p_cwd;
 	}
+	newproc->ppid = curproc->pid;
 	spinlock_release(&curproc->p_lock);
 
 	return newproc;

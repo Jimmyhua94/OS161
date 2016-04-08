@@ -99,6 +99,7 @@ struct proc {
     pid_t ppid;
     bool exited;
     int exitcode;
+	bool waiting;
 };
 
 /* This is the process structure for the kernel and for kernel-only threads. */

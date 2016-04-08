@@ -25,11 +25,11 @@ int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
         }
         if(!exited(pidIndex)){
 			lock_acquire(getproc(pidIndex)->lock);
+			getproc(pidIndex)->waiting = true;
 			cv_wait(getproc(pidIndex)->waitlock,getproc(pidIndex)->lock);
 			lock_release(getproc(pidIndex)->lock);
 			*(int*)status = exitcode(pidIndex);
 			*retval = pid;
-			proc_destroy(getproc(pidIndex));
         }
         return 0;
     }
