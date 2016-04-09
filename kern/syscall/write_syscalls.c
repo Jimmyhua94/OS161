@@ -27,15 +27,15 @@ int sys___write(int fd, const void *buf, size_t nbytes, int32_t *retval){
     struct uio u;
     
     uio_kinit(&iov,&u,(void *)buf,nbytes,curproc->ft[fd]->offset,UIO_WRITE);
+	
+    *retval = u.uio_resid;
+    struct handler* handle = curproc->ft[fd];
+    handle->offset += *retval;
     
     result = VOP_WRITE(curproc->ft[fd]->path,&u);
     if (result){
         return result;
     }
-    
-    *retval = nbytes - u.uio_resid;
-    struct handler* handle = curproc->ft[fd];
-    handle->offset += *retval;
 
     return 0;
 }

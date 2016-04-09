@@ -1,2 +1,7 @@
+#!/bin/bash
 cd ~/root/
-sys161 kernel
+if [ $# -gt 0 ]; then
+	sys161 -w kernel
+else
+	sys161 kernel
+fi

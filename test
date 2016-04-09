@@ -1,7 +1,0 @@
-cd ~/root/
-if [$# > 1]
-then
-	test161 run $1
-else
-	test161 run asst1
-fi

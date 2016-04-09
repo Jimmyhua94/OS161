@@ -10,7 +10,7 @@
 
 void sys___exit(int exitcode)
 {
-	curproc->exited = 1;
+	curproc->exited = true;
     curproc->exitcode = _MKWAIT_EXIT(exitcode);
     
 	if(curproc->waiting){

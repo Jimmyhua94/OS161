@@ -8,7 +8,7 @@
 
 
 int sys___dup2(int oldfd, int newfd, int32_t *retval){
-    if(oldfd < 0 || newfd < 0 || newfd < OPEN_MAX || oldfd < OPEN_MAX || curproc->ft[oldfd] == NULL){
+    if(oldfd < 0 || newfd < 0 || newfd > OPEN_MAX || oldfd > OPEN_MAX || curproc->ft[oldfd] == NULL){
         return EBADF;
     }
     

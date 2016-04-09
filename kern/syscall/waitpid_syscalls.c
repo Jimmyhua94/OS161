@@ -24,10 +24,12 @@ int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
         if(child_proc->ppid != curproc->pid){
             return ECHILD;
         }
-        if(!(child_proc->exited)){
+        // if(!(child_proc->exited)){
 			lock_acquire(child_proc->lock);
 			child_proc->waiting = true;
-			cv_wait(child_proc->waitlock,child_proc->lock);
+			while(!(child_proc->exited)){
+				cv_wait(child_proc->waitlock,child_proc->lock);
+			}
 			lock_release(child_proc->lock);
             // *(int*)status = child_proc->exitcode;
             int exitcode = child_proc->exitcode;
@@ -36,7 +38,7 @@ int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
                 return result;
             }
 			*retval = pid;
-        }
+        // }
         return 0;
     }
     return ESRCH;

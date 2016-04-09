@@ -82,6 +82,9 @@ int sys___execv(const_userptr_t program, userptr_t args){
 	if (result) {
 		return result;
 	}
+	
+	as_destroy(curproc->p_addrspace);
+	curproc->p_addrspace = NULL;
 
 	/* We should be a new process. */
 	KASSERT(proc_getas() == NULL);

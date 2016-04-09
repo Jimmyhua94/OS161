@@ -38,7 +38,7 @@
 int
 main(void)
 {
-	/* Just exit with success. */
+	// /* Just exit with success. */
 	
 	int pid = fork();
 	if(pid == 0){
@@ -48,13 +48,11 @@ main(void)
 		printf("b%d--parent\n",pid);
         waitpid(pid, NULL, 0);
 	}
-	// while(1){
-        // if(pid == 0){
-            // printf("..");
-        // }
-        // else{
-            // printf("--");
-        // }
-	// }
+	fork();
+	fork();
+	printf("ABC\n");
+	
+	
+	
     exit(0);
 }
