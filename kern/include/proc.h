@@ -82,6 +82,7 @@ struct proc {
 	struct cv *waitlock;
 	struct lock *lock;
 	unsigned p_numthreads;		/* Number of threads in this process */
+    struct lock *fdlock;
 
 	/* VM */
 	struct addrspace *p_addrspace;	/* virtual address space */

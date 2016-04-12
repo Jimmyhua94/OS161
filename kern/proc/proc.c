@@ -107,6 +107,7 @@ proc_create(const char *name)
     proc->exited = false;
     proc->exitcode = 0;
 	proc->waiting = false;
+    proc->fdlock = lock_create("fdlock");
 	
 	proc->waitlock = NULL;
 	proc->lock = NULL;

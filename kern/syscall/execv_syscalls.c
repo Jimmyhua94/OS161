@@ -14,63 +14,49 @@
 
 int sys___execv(const_userptr_t program, userptr_t args){
     int result;
+    (void)args;
     
     char filepath[PATH_MAX];
     size_t size = 0;
     
-    char *argoff = kmalloc(ARG_MAX * sizeof(userptr_t)); //offset of arguments
-    char *kargs = kmalloc(sizeof(ARG_MAX));  //char arguments
+    char **tempargs = (char**)args;
+    int maxargs = 0;
+    while(tempargs[maxargs] != NULL){
+        maxargs++;
+    }
     
-    char *offset = kargs;
+    int ptr[maxargs+1];
+    char *arg = kmalloc(ARG_MAX);
+    char *argoff = arg;
+    size_t argsize = 0;
     
+    //Copy in pathname
     result = copyinstr(program,filepath, PATH_MAX,&size);
     if (result){
         return result;
     }
     
-    //copy args in
-    userptr_t ptr;
-    size_t argsize = 0;
-    int argoffcount = 0;
-    
     int i = 0;
-    do{
-        result = copyin(args,&ptr,sizeof(userptr_t));
+    ptr[i] = (maxargs*4)+4;
+    while(tempargs[i] != NULL){
+        result = copyinstr((userptr_t)tempargs[i],argoff,ARG_MAX,&size);
         if(result){
             return result;
         }
-        if(ptr != NULL){
-            result = copyinstr(ptr,offset,ARG_MAX,&size);
-            if(result){
-                return result;
-            }
-            argsize += size;
-            if((size + 1)%4 == 0){
-                offset += size+1;
-                argoff[i] = argoffcount;
-                argoffcount += size+1;
-            }
-            else if((size + 2)%4 == 0){
-                offset += size+2;
-                argoff[i] = argoffcount;
-                argoffcount += size+2;
-            }
-            else if((size + 3)%4 == 0){
-                offset += size+3;
-                argoff[i] = argoffcount;
-                argoffcount += size+3;
-            }
-            else{
-                offset += size;
-                argoff[i] = argoffcount;
-                argoffcount += size;
-            }
-            args+=4;
+        argoff += size;
+        int pad = size%4;
+        for(int j = 0;j < pad;j++){
+            *argoff = '\0';
+            argoff++;
         }
+        int offsize = size+pad;
+        argsize += offsize;
+        ptr[i+1] = offsize;
+        if(argsize > ARG_MAX){
+            return E2BIG;
+        }
+        argoff += size;
         i++;
-    }while(ptr != NULL && argsize > ARG_MAX);
-    if(argsize > ARG_MAX){
-        return E2BIG;
     }
 
     struct addrspace *as;
@@ -118,18 +104,21 @@ int sys___execv(const_userptr_t program, userptr_t args){
 		return result;
 	}
     
-    int finaloff = i*4;
-    
-    for(int j = 0; j < i-1;j++){
-        argoff[i]+= *(&stackptr+finaloff);
+    userptr_t ptrs[maxargs+1];
+    for(int j = 0;j < maxargs+1;j++){
+        ptrs[j] = (userptr_t)(ptr[j]+stackptr);
     }
-    userptr_t ptrstack = (userptr_t) stackptr;
-    result = copyout(argoff,ptrstack,4*i);
-    if (result){
+    
+    userptr_t ptrstack = (userptr_t)stackptr;
+    result = copyout(&ptrs,ptrstack,sizeof(ptrs));
+    if(result){
         return result;
     }
-    ptrstack = (userptr_t)stackptr+(4*i);
-    result = copyout(kargs,ptrstack,ARG_MAX);
+    ptrstack += sizeof(ptrs);
+    result = copyout(arg,ptrstack,argsize);
+    if(result){
+        return result;
+    }
     
     /* Warp to user mode. */
 	enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,

@@ -35,13 +35,12 @@ int sys___lseek(int fd, off_t pos, int whence, int64_t *retval){
         }
     }
     else if(whence == SEEK_END){
-        struct stat *stats = kmalloc(sizeof(*stats));
-        result = VOP_STAT(curproc->ft[fd]->path,stats);
+        struct stat stats;
+        result = VOP_STAT(curproc->ft[fd]->path,&stats);
         if (result){
             return result;
         }
-        off_t end = stats->st_size;
-        kfree(stats);
+        off_t end = stats.st_size;
         if(end + pos > 0){
             curproc->ft[fd]->offset = end+pos;
         }

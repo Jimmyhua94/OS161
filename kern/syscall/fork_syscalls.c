@@ -51,6 +51,8 @@ proc_create(const char *name)
     proc->exited = false;
     proc->exitcode = 0;
     
+    proc->fdlock = curproc->fdlock;
+    
     memset(proc->ft,0,sizeof(proc->ft));
 
 	return proc;
