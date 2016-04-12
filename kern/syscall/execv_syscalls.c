@@ -103,17 +103,20 @@ int sys___execv(const_userptr_t program, userptr_t args){
 		/* p_addrspace will go away when curproc is destroyed */
 		return result;
 	}
+	
+	curproc->p_name = tempargs[0];
     
+	//assign address to each offset
     userptr_t ptrs[maxargs+1];
     for(int j = 0;j < maxargs+1;j++){
         ptrs[j] = (userptr_t)(ptr[j]+stackptr);
     }
-    
-    userptr_t ptrstack = (userptr_t)stackptr;
+    userptr_t ptrstack = (userptr_t)stackptr-sizeof(ptrs)-argsize;
     result = copyout(&ptrs,ptrstack,sizeof(ptrs));
     if(result){
         return result;
     }
+	
     ptrstack += sizeof(ptrs);
     result = copyout(arg,ptrstack,argsize);
     if(result){
