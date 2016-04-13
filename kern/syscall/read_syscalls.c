@@ -14,6 +14,7 @@
 
 int sys___read(int fd, const void *buf, size_t nbytes, int32_t *retval)
 {
+    struct proc* test = curproc;
     if (fd < 0 || fd > OPEN_MAX || curproc->ft[fd] == NULL)
     {
         return EBADF;
@@ -40,6 +41,6 @@ int sys___read(int fd, const void *buf, size_t nbytes, int32_t *retval)
     *retval = nbytes - u.uio_resid;
     struct handler* handle = curproc->ft[fd];
     handle->offset = handle->offset + *retval;
-    
+    (void)test;
     return 0;
 }

@@ -14,7 +14,8 @@
 
 int sys___execv(const_userptr_t program, userptr_t args){
     int result;
-    (void)args;
+    
+    struct proc* test = curproc;
     
     char filepath[PATH_MAX];
     size_t size = 0;
@@ -132,7 +133,7 @@ int sys___execv(const_userptr_t program, userptr_t args){
     if(result){
         return result;
     }
-    
+    (void)test;
     /* Warp to user mode. */
 	enter_new_process(maxargs, (userptr_t)stackptr,
 			  NULL /*userspace addr of environment*/,

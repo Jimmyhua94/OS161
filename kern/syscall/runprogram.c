@@ -138,7 +138,7 @@ runprogram(char *progname)
     handle->path = stdv;
     handle->offset = 0;
     handle->flags = O_WRONLY;
-    handle->count = 50;
+    handle->count = 0;
     curproc->ft[STDERR_FILENO] = handle;
 
 	/* Warp to user mode. */
