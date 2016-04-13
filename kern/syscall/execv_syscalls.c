@@ -44,18 +44,26 @@ int sys___execv(const_userptr_t program, userptr_t args){
             return result;
         }
         argoff += size;
-        int pad = size%4;
+        int pad = 0;
+        if((size + 1)%4 == 0){
+            pad = 1;
+        }
+        else if((size + 2)%4 == 0){
+            pad = 2;
+        }
+        else if((size + 3)%4 == 0){
+            pad = 3;
+        }
         for(int j = 0;j < pad;j++){
             *argoff = '\0';
             argoff++;
         }
         int offsize = size+pad;
         argsize += offsize;
-        ptr[i+1] = offsize;
+        ptr[i+1] = ptr[i]+offsize;
         if(argsize > ARG_MAX){
             return E2BIG;
         }
-        argoff += size;
         i++;
     }
 
@@ -108,10 +116,12 @@ int sys___execv(const_userptr_t program, userptr_t args){
     
 	//assign address to each offset
     userptr_t ptrs[maxargs+1];
-    for(int j = 0;j < maxargs+1;j++){
-        ptrs[j] = (userptr_t)(ptr[j]+stackptr);
-    }
     userptr_t ptrstack = (userptr_t)stackptr-sizeof(ptrs)-argsize;
+    stackptr = (vaddr_t)ptrstack;
+    for(int j = 0;j < maxargs;j++){
+        ptrs[j] = (userptr_t)(ptr[j]+ptrstack);
+    }
+    ptrs[maxargs+1] = NULL;
     result = copyout(&ptrs,ptrstack,sizeof(ptrs));
     if(result){
         return result;
@@ -124,7 +134,7 @@ int sys___execv(const_userptr_t program, userptr_t args){
     }
     
     /* Warp to user mode. */
-	enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,
+	enter_new_process(maxargs, (userptr_t)stackptr,
 			  NULL /*userspace addr of environment*/,
 			  stackptr, entrypoint);
 
