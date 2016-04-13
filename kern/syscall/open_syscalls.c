@@ -42,11 +42,13 @@ int sys___open(const_userptr_t filename, int flags,mode_t mode,int32_t *retval){
         return result;
     }
     
+	lock_acquire(curproc->fdlock);
     for (handle->fd = 0; handle->fd < OPEN_MAX; handle->fd++){
         if(curproc->ft[handle->fd] == NULL){
             break;
         }
     }
+	lock_release(curproc->fdlock);
     handle->path = v;
     if (flags & O_APPEND){
         struct stat *stats = kmalloc(sizeof(*stats));
@@ -70,6 +72,7 @@ int sys___open(const_userptr_t filename, int flags,mode_t mode,int32_t *retval){
         handle->flags |= O_RDWR;
     }
     handle->count++;
+	handle->lock = lock_create(handle->fd + "_lock");
     
     curproc->ft[handle->fd] = handle;
     *retval = handle->fd;

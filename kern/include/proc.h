@@ -56,6 +56,7 @@ struct handler {
     off_t offset;                   /* offset for read/write*/
     int flags;                   /* O_RDONLY, O_WRONLY, O_RDWR falgs */
     int count;                  /* How many have this file opened */
+	struct lock* lock;
 };
 
 /*

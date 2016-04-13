@@ -12,7 +12,7 @@
 #include <lib.h>
 #include <uio.h>
 
-int sys___read(int fd, const void *buf, size_t nbytes, int32_t *retval)
+int sys___read(int fd, userptr_t buf, size_t nbytes, int32_t *retval)
 {
     struct proc* test = curproc;
     if (fd < 0 || fd > OPEN_MAX || curproc->ft[fd] == NULL)
@@ -28,19 +28,18 @@ int sys___read(int fd, const void *buf, size_t nbytes, int32_t *retval)
     struct iovec iov;
     struct uio u;
     
-    uio_kinit(&iov,&u,(void *)buf,nbytes,curproc->ft[fd]->offset,UIO_READ);
+    uio_kinit(&iov,&u,buf,nbytes,curproc->ft[fd]->offset,UIO_READ);
     
     result= VOP_READ(curproc->ft[fd]->path,&u);
-    
-    //catches EFAULT
     if (result)
     {
         return result;
     }
-    
-    *retval = nbytes - u.uio_resid;
-    struct handler* handle = curproc->ft[fd];
-    handle->offset = handle->offset + *retval;
+    int offset = nbytes - u.uio_resid;
+	if(VOP_ISSEEKABLE(curproc->ft[fd]->path)){
+		curproc->ft[fd]->offset += offset;
+	}
+    *retval = offset;
     (void)test;
     return 0;
 }

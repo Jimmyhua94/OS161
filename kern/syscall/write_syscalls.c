@@ -14,7 +14,7 @@
 #include <synch.h>
 
 
-int sys___write(int fd, const void *buf, size_t nbytes, int32_t *retval){
+int sys___write(int fd, userptr_t buf, size_t nbytes, int32_t *retval){
     if(fd < 0 || fd > OPEN_MAX || curproc->ft[fd] == NULL){
         return EBADF;
     }
@@ -27,15 +27,17 @@ int sys___write(int fd, const void *buf, size_t nbytes, int32_t *retval){
     struct iovec iov;
     struct uio u;
     lock_acquire(curproc->fdlock);
-    uio_kinit(&iov,&u,(void *)buf,nbytes,curproc->ft[fd]->offset,UIO_WRITE);
+    uio_kinit(&iov,&u,buf,nbytes,curproc->ft[fd]->offset,UIO_WRITE);
 	
     result = VOP_WRITE(curproc->ft[fd]->path,&u);
     if (result){
         return result;
     }
-    
-    curproc->ft[fd]->offset = u.uio_offset;
-    *retval = nbytes - u.uio_resid;
+    int offset = nbytes - u.uio_resid;
+	if(VOP_ISSEEKABLE(curproc->ft[fd]->path)){
+		curproc->ft[fd]->offset += offset;
+	}
+    *retval = offset;
     lock_release(curproc->fdlock);
 
     return 0;

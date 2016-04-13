@@ -12,6 +12,13 @@ void sys___exit(int exitcode)
 {
 	curproc->exited = true;
     curproc->exitcode = _MKWAIT_EXIT(exitcode);
+	
+	for(int i = 3;i < OPEN_MAX;i++){
+		if(curproc->ft[i] != NULL){
+			int result = sys___close(i);
+			
+		}
+	}
     
 	if(curproc->waiting){
 		lock_acquire(curproc->lock);

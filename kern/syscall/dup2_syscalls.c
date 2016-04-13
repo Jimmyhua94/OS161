@@ -5,6 +5,7 @@
 #include <proc.h>
 #include <limits.h>
 #include <kern/errno.h>
+#include <synch.h>
 
 
 int sys___dup2(int oldfd, int newfd, int32_t *retval){
@@ -15,8 +16,16 @@ int sys___dup2(int oldfd, int newfd, int32_t *retval){
     if(oldfd == newfd){
         return 0; 
     }
+	if(curproc->ft[newfd] != NULL){
+		int result = sys___close(newfd);
+		if (result){
+			return result;
+		}
+	}
+	curproc->ft[oldfd]->count++;
     
     curproc->ft[newfd] = curproc->ft[oldfd];
+	
     
     *retval = newfd;
     

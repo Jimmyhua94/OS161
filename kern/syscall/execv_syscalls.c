@@ -26,7 +26,7 @@ int sys___execv(const_userptr_t program, userptr_t args){
         maxargs++;
     }
     
-    int ptr[maxargs+1];
+	userptr_t *ptr = kmalloc((maxargs+1)*4);
     char *arg = kmalloc(ARG_MAX);
     char *argoff = arg;
     size_t argsize = 0;
@@ -38,7 +38,7 @@ int sys___execv(const_userptr_t program, userptr_t args){
     }
     
     int i = 0;
-    ptr[i] = (maxargs*4)+4;
+    ptr[i] = (userptr_t)((maxargs+1)*4);
     while(tempargs[i] != NULL){
         result = copyinstr((userptr_t)tempargs[i],argoff,ARG_MAX,&size);
         if(result){
@@ -116,19 +116,20 @@ int sys___execv(const_userptr_t program, userptr_t args){
 	curproc->p_name = tempargs[0];
     
 	//assign address to each offset
-    userptr_t ptrs[maxargs+1];
-    userptr_t ptrstack = (userptr_t)stackptr-sizeof(ptrs)-argsize;
+    // userptr_t ptrs = kmalloc(maxargs+1);
+    userptr_t ptrstack = (userptr_t)(stackptr-((maxargs+1)*4)-argsize);
     stackptr = (vaddr_t)ptrstack;
     for(int j = 0;j < maxargs;j++){
-        ptrs[j] = (userptr_t)(ptr[j]+ptrstack);
+        ptr[j] = (userptr_t)((int)ptr[j]+ptrstack);
     }
-    ptrs[maxargs+1] = NULL;
-    result = copyout(&ptrs,ptrstack,sizeof(ptrs));
+    ptr[maxargs] = NULL;
+	
+    result = copyout(ptr,ptrstack,((maxargs+1)*4));
     if(result){
         return result;
     }
 	
-    ptrstack += sizeof(ptrs);
+    ptrstack += ((maxargs+1)*4);
     result = copyout(arg,ptrstack,argsize);
     if(result){
         return result;
