@@ -54,7 +54,7 @@ proc_create(const char *name)
     
     proc->fdlock = curproc->fdlock;
     
-    memset(proc->ft,0,sizeof(proc->ft));
+    //memset(proc->ft,0,sizeof(proc->ft));
 
 	return proc;
 }
@@ -83,12 +83,14 @@ int sys___fork(struct trapframe *tf,int *retval)
     child_proc->ppid = curproc->pid;
 	child_proc->p_cwd = curproc->p_cwd;
 	VOP_INCREF(child_proc->p_cwd);
+    lock_acquire(curproc->fdlock);
 	for(int i = 0;i < OPEN_MAX;i++){
 		if(curproc->ft[i]!= NULL){
 			curproc->ft[i]->count++;
 		}
 		child_proc->ft[i] = curproc->ft[i];
 	}
+    lock_release(curproc->fdlock);
     struct addrspace* child_addrspace;
     int result = as_copy(curproc->p_addrspace, &child_addrspace);
     if(result)

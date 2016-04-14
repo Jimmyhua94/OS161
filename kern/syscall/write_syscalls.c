@@ -13,7 +13,6 @@
 #include <uio.h>
 #include <synch.h>
 
-
 int sys___write(int fd, userptr_t buf, size_t nbytes, int32_t *retval){
     if(fd < 0 || fd > OPEN_MAX || curproc->ft[fd] == NULL){
         return EBADF;
@@ -26,19 +25,19 @@ int sys___write(int fd, userptr_t buf, size_t nbytes, int32_t *retval){
     
     struct iovec iov;
     struct uio u;
-    lock_acquire(curproc->fdlock);
+    lock_acquire(curproc->ft[fd]->lock);
     uio_kinit(&iov,&u,buf,nbytes,curproc->ft[fd]->offset,UIO_WRITE);
 	
     result = VOP_WRITE(curproc->ft[fd]->path,&u);
     if (result){
+        lock_release(curproc->ft[fd]->lock);
         return result;
     }
     int offset = nbytes - u.uio_resid;
 	if(VOP_ISSEEKABLE(curproc->ft[fd]->path)){
 		curproc->ft[fd]->offset += offset;
 	}
+    lock_release(curproc->ft[fd]->lock);
     *retval = offset;
-    lock_release(curproc->fdlock);
-
     return 0;
 }

@@ -18,11 +18,13 @@ int sys___lseek(int fd, off_t pos, int whence, int64_t *retval){
     if(!VOP_ISSEEKABLE(curproc->ft[fd]->path)){
         return ESPIPE;
     }
+    lock_acquire(curproc->ft[fd]->lock);
     if(whence == SEEK_SET){
         if(pos >= 0){
             curproc->ft[fd]->offset = pos;
         }
         else{
+            lock_release(curproc->ft[fd]->lock);
             return EINVAL;
         }
     }
@@ -31,6 +33,7 @@ int sys___lseek(int fd, off_t pos, int whence, int64_t *retval){
             curproc->ft[fd]->offset += pos;
         }
         else{
+            lock_release(curproc->ft[fd]->lock);
             return EINVAL;
         }
     }
@@ -38,6 +41,7 @@ int sys___lseek(int fd, off_t pos, int whence, int64_t *retval){
         struct stat stats;
         result = VOP_STAT(curproc->ft[fd]->path,&stats);
         if (result){
+            lock_release(curproc->ft[fd]->lock);
             return result;
         }
         off_t end = stats.st_size;
@@ -45,13 +49,16 @@ int sys___lseek(int fd, off_t pos, int whence, int64_t *retval){
             curproc->ft[fd]->offset = end+pos;
         }
         else{
+            lock_release(curproc->ft[fd]->lock);
             return EINVAL;
         }
     }
     else{
+        lock_release(curproc->ft[fd]->lock);
         return EINVAL;
     }
     *retval = curproc->ft[fd]->offset;
+    lock_release(curproc->ft[fd]->lock);
     
     return 0;
 }

@@ -31,7 +31,6 @@ int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
 				cv_wait(child_proc->waitlock,child_proc->lock);
 			}
 			lock_release(child_proc->lock);
-            // *(int*)status = child_proc->exitcode;
             int exitcode = child_proc->exitcode;
             int result = copyout(&exitcode,status,sizeof(int));
             if (result){

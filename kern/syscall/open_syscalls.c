@@ -36,7 +36,6 @@ int sys___open(const_userptr_t filename, int flags,mode_t mode,int32_t *retval){
     else{
         result = vfs_open(filepath,flags,mode,&v);
     }
-    
     if (result){
         kfree(handle);
         return result;
@@ -45,15 +44,19 @@ int sys___open(const_userptr_t filename, int flags,mode_t mode,int32_t *retval){
 	lock_acquire(curproc->fdlock);
     for (handle->fd = 0; handle->fd < OPEN_MAX; handle->fd++){
         if(curproc->ft[handle->fd] == NULL){
+            curproc->ft[handle->fd] = handle;
+            handle->lock = lock_create(handle->fd + "_lock");
             break;
         }
     }
 	lock_release(curproc->fdlock);
+    lock_acquire(handle->lock);
     handle->path = v;
     if (flags & O_APPEND){
         struct stat *stats = kmalloc(sizeof(*stats));
         result = VOP_STAT(v,stats);
         if (result){
+            lock_release(handle->lock);
             return result;
         }
         handle->offset = stats->st_size;
@@ -72,9 +75,9 @@ int sys___open(const_userptr_t filename, int flags,mode_t mode,int32_t *retval){
         handle->flags |= O_RDWR;
     }
     handle->count++;
-	handle->lock = lock_create(handle->fd + "_lock");
     
-    curproc->ft[handle->fd] = handle;
     *retval = handle->fd;
+    lock_release(handle->lock);
+    
     return 0;
 }

@@ -16,16 +16,18 @@ int sys___dup2(int oldfd, int newfd, int32_t *retval){
     if(oldfd == newfd){
         return 0; 
     }
+    
 	if(curproc->ft[newfd] != NULL){
 		int result = sys___close(newfd);
 		if (result){
 			return result;
 		}
 	}
+    lock_acquire(curproc->ft[oldfd]->lock);
 	curproc->ft[oldfd]->count++;
     
     curproc->ft[newfd] = curproc->ft[oldfd];
-	
+	lock_release(curproc->ft[oldfd]->lock);
     
     *retval = newfd;
     
