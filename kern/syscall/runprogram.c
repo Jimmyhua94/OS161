@@ -112,7 +112,7 @@ runprogram(char *progname)
     handle->path = stdv;
     handle->offset = 0;
     handle->flags = O_RDONLY;
-    handle->count = 0;
+    handle->count = 1;
 	handle->lock = lock_create("stdin_lock");
     curproc->ft[STDIN_FILENO] = handle;
     handle = NULL;
@@ -126,7 +126,7 @@ runprogram(char *progname)
     handle->path = stdv;
     handle->offset = 0;
     handle->flags = O_WRONLY;
-    handle->count = 0;
+    handle->count = 1;
 	handle->lock = lock_create("stdout_lock");
     curproc->ft[STDOUT_FILENO] = handle;
     handle = NULL;
@@ -140,7 +140,7 @@ runprogram(char *progname)
     handle->path = stdv;
     handle->offset = 0;
     handle->flags = O_WRONLY;
-    handle->count = 0;
+    handle->count = 1;
 	handle->lock = lock_create("stderr_lock");
     curproc->ft[STDERR_FILENO] = handle;
 

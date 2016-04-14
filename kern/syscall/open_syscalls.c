@@ -74,7 +74,7 @@ int sys___open(const_userptr_t filename, int flags,mode_t mode,int32_t *retval){
     else if (flags & O_RDWR){
         handle->flags |= O_RDWR;
     }
-    handle->count++;
+    handle->count = 1;
     
     *retval = handle->fd;
     lock_release(handle->lock);

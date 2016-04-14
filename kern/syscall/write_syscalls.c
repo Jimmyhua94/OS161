@@ -14,6 +14,7 @@
 #include <synch.h>
 
 int sys___write(int fd, userptr_t buf, size_t nbytes, int32_t *retval){
+    struct proc* test = curproc;
     if(fd < 0 || fd > OPEN_MAX || curproc->ft[fd] == NULL){
         return EBADF;
     }
@@ -39,5 +40,6 @@ int sys___write(int fd, userptr_t buf, size_t nbytes, int32_t *retval){
 	}
     lock_release(curproc->ft[fd]->lock);
     *retval = offset;
+    (void)test;
     return 0;
 }
