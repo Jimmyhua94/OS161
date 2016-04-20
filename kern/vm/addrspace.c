@@ -49,6 +49,11 @@ as_create(void)
 	if (as == NULL) {
 		return NULL;
 	}
+    
+    as->pgt = kmalloc(sizeof(struct pgtentry));
+    as->pgt->next = NULL;
+    as->region = kmalloc(sizeof(struct region));
+    as->region->next = NULL;
 
 	return as;
 }

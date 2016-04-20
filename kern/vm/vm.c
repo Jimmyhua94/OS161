@@ -9,11 +9,56 @@
 #include <current.h>
 
 void vm_bootstrap(void){
+    //Done in ram_bootstrap
 }
 
 int vm_fault(int faulttype, vaddr_t faultaddress){
-	(void)faulttype;
-	(void)faultaddress;
+	switch (faulttype){
+	    case VM_FAULT_READONLY:
+		/* We always create pages read-write, so we can't get this */
+		panic("vm: got VM_FAULT_READONLY\n");
+	    case VM_FAULT_READ:
+	    case VM_FAULT_WRITE:
+		break;
+	    default:
+		return EINVAL;
+	}
+    if(curproc == NULL){
+        return EFAULT;
+    }
+    struct addrspace *as = proc_getas();
+    if (as == NULL){
+        return EFAULT;
+    }
+    
+    
+    
+	struct ptentry* pgt = as->pgt;
+    bool foundpgte = false;
+    vaddr_r pages = NULL;
+    vaddr_t vaddr = faultaddress & PAGE_FRAME;
+    paddr_t paddr = NULL;
+    do{
+        if(pgt->entry.vpn == vaddr){
+            foundpgte = true;
+            paddr = KVADDR_TO_PADDR(vaddr);
+            tlb_random((uint32_t)vaddr,(uint32_t)paddr);
+        }
+        pgt = pgt->next;
+    }while(pgt->next != NULL);
+    if(!foundpgte){
+        pages = alloc_kpages(1);
+        while(pt->next != NULL){
+            pgt = pgt->next;
+        }
+        pgt->next = kmalloc(sizeof(struct pgtentry));
+        pgt->next->vpn = pages & PAGE_FRAME;
+        pgt->next->ppn = KVADDR_TO_PADDR(pgt->next->vpn) & faultype;
+        pgt->next->permission = faulttype;
+        pgt->next->state = false;
+        pgt->next->next = NULL;
+        tlb_random((uint32_t)(pgt->next->vpn),(uint32_t)(pgt->next->ppn));
+    }
 	return 0;
 }
 
