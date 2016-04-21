@@ -52,15 +52,15 @@ struct pgtentry{
     paddr_t ppn;
     mode_t permission;
     bool state;
-    struct ptentry* next;
-}
+    struct pgtentry* next;
+};
 
 struct region{
     vaddr_t start;
     size_t pages;
     mode_t permissions;
     struct region* next;
-}
+};
 
 struct addrspace {
 #if OPT_DUMBVM
@@ -73,8 +73,8 @@ struct addrspace {
         paddr_t as_stackpbase;
 #else
         /* Put stuff here for your VM system */
-    struct ptentry* pgt;
-    struct region* region;
+    struct pgtentry* pgt;
+    struct region* r;
 #endif
 };
 

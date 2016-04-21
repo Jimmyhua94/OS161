@@ -30,36 +30,73 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
     if (as == NULL){
         return EFAULT;
     }
-    
-    
-    
+
 	struct ptentry* pgt = as->pgt;
+	struct region* r = as->r;
     bool foundpgte = false;
     vaddr_r pages = NULL;
     vaddr_t vaddr = faultaddress & PAGE_FRAME;
     paddr_t paddr = NULL;
+	
+	KASSERT(pgt != NULL);
+	KASSERT(r != NULL);
+	
+	int spl;
+	uint32_t ehi, elo;
+	
+	bool valid = false;
+	
+	do{
+		if(vaddr >= as->r->start && vaddr < as->r->start+as->r->pages*PAGE_SIZE){
+			valid = true;
+			break;
+		}
+		as->r = as->r->next;
+	}while(as->r->next != NULL);
+	if(!valid){
+		return EFAULT;
+	}
+	
     do{
-        if(pgt->entry.vpn == vaddr){
+        if(pgt->vpn == vaddr){
             foundpgte = true;
-            paddr = KVADDR_TO_PADDR(vaddr);
-            tlb_random((uint32_t)vaddr,(uint32_t)paddr);
+			paddr = pgt->ppn;
+			break;
         }
         pgt = pgt->next;
     }while(pgt->next != NULL);
+	
     if(!foundpgte){
-        pages = alloc_kpages(1);
-        while(pt->next != NULL){
-            pgt = pgt->next;
+        while(pgt->next != NULL)
+            pgt = pgt->next;{
         }
+		
         pgt->next = kmalloc(sizeof(struct pgtentry));
-        pgt->next->vpn = pages & PAGE_FRAME;
-        pgt->next->ppn = KVADDR_TO_PADDR(pgt->next->vpn) & faultype;
+		if(pgt->next == NULL){
+			return ENOMEM;
+		}
+        pgt->next->vpn = vaddr;
+        pgt->next->ppn = KVADDR_TO_PADDR(alloc_kpages(1));
         pgt->next->permission = faulttype;
         pgt->next->state = false;
         pgt->next->next = NULL;
-        tlb_random((uint32_t)(pgt->next->vpn),(uint32_t)(pgt->next->ppn));
+		paddr = pgt->next->ppn;
     }
-	return 0;
+	
+	spl = splhigh();
+	for (int i=0; i<NUM_TLB; i++) {
+		tlb_read(&ehi, &elo, i);
+		if (elo & TLBLO_VALID) {
+			continue;
+		}
+		ehi = faultaddress;
+		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
+		tlb_write(ehi, elo, i);
+		splx(spl);
+		return 0;
+	}
+	splx(spl);
+	return EFAULT;
 }
 
 vaddr_t alloc_kpages(unsigned npages){

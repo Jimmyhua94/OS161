@@ -33,6 +33,8 @@
 #include <addrspace.h>
 #include <vm.h>
 #include <proc.h>
+#include <spl.h>
+#include <mips/tlb.h>
 
 /*
  * Note! If OPT_DUMBVM is set, as is the case until you start the VM
@@ -52,8 +54,8 @@ as_create(void)
     
     as->pgt = kmalloc(sizeof(struct pgtentry));
     as->pgt->next = NULL;
-    as->region = kmalloc(sizeof(struct region));
-    as->region->next = NULL;
+    as->r = kmalloc(sizeof(struct region));
+    as->r->next = NULL;
 
 	return as;
 }
@@ -84,7 +86,6 @@ as_destroy(struct addrspace *as)
 	/*
 	 * Clean up as needed.
 	 */
-
 	kfree(as);
 }
 
@@ -105,6 +106,17 @@ as_activate(void)
 	/*
 	 * Write this.
 	 */
+	 
+	int spl;
+
+	/* Disable interrupts on this CPU while frobbing the TLB. */
+	spl = splhigh();
+
+	for (int i=0; i<NUM_TLB; i++) {
+		tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
+	}
+
+	splx(spl);
 }
 
 void
@@ -134,14 +146,33 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
 	/*
 	 * Write this.
 	 */
+	size_t npages;
 
-	(void)as;
-	(void)vaddr;
-	(void)memsize;
-	(void)readable;
-	(void)writeable;
-	(void)executable;
-	return ENOSYS;
+	/* Align the region. First, the base... */
+	sz += vaddr & ~(vaddr_t)PAGE_FRAME;
+	vaddr &= PAGE_FRAME;
+
+	/* ...and now the length. */
+	sz = (sz + PAGE_SIZE - 1) & PAGE_FRAME;
+
+	npages = sz / PAGE_SIZE;
+	
+	struct addrspace* as = proc_getas();
+	
+	do{
+		if(as->r->start == vaddr){
+			return 0;
+		}
+		as->r = as->r->next;
+	}while(as->r->next != NULL);
+	as->r->next = kmalloc(sizeof(struct region));
+	if(as->r->next == NULL){
+		return ENOMEM;
+	}
+	as->r->next->start = vaddr;
+	as->r->next->pages = npages;
+	as->r->next->permission = as->r->next->permission & readable & writeable & executable;
+	return 0;
 }
 
 int
@@ -150,8 +181,19 @@ as_prepare_load(struct addrspace *as)
 	/*
 	 * Write this.
 	 */
-
 	(void)as;
+	// struct region* r = as->r;
+	// struct pgtentry* pgt = as->pgt;
+	
+	// while(r->next != NULL){
+		// while(pgt->next != NULL){
+			// pgt = pgt->next;
+		// }
+		// pgt->next = kmalloc(sizeof(struct pgtentry));
+		// pgt->next->vpn = alloc_kpages(as->r->pages);
+		// pgt->next->ppn = KVADDR_TO_PADDR(pgt->next->vpn);
+		// paddr = KVADDR_TO_PADDR(vaddr);
+	// }
 	return 0;
 }
 
