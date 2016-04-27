@@ -71,5 +71,6 @@ int sys___execv(const_userptr_t program, userptr_t args);
 int sys___fork(struct trapframe *tf,int *retval);
 void sys___exit(int exitcode);
 int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval);
+int sys___sbrk(int amount, int32_t *retval);
 
 #endif /* _SYSCALL_H_ */

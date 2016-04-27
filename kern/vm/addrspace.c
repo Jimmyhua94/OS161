@@ -90,7 +90,15 @@ as_copy(struct addrspace *old, struct addrspace **ret)
     while(pgtold->next != NULL){
         pgtnew->next = kmalloc(sizeof(struct pgtentry));
         pgtnew->next->vpn = pgtold->next->vpn;
-        pgtnew->next->ppn = pgtold->next->ppn;
+		vaddr_t pgvaddr = PADDR_TO_KVADDR(pgtold->next->ppn);
+		int i = 0;
+		for(i = fixed_pages;i < max_pages;i++){
+			if (coremap[i].vaddr == pgvaddr){
+				break;
+			}
+		}
+        pgtnew->next->ppn = KVADDR_TO_PADDR(alloc_kpages(coremap[i].nsize/PAGE_SIZE));
+		memcpy((void *)PADDR_TO_KVADDR(pgtnew->next->ppn),(void *)pgvaddr,coremap[i].nsize);
         pgtnew->next->permission = pgtold->next->permission;
         pgtnew->next->state = pgtold->next->state;
         pgtnew->next->next = NULL;
@@ -192,6 +200,7 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
 	temp->next->start = vaddr;
 	temp->next->pages = npages;
 	temp->next->permissions = temp->next->permissions & readable & writeable & executable;
+	as->heap_start = as->heap_end = vaddr + npages*PAGE_SIZE;
 	return 0;
 }
 
@@ -235,9 +244,9 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 	 * Write this.
 	 */
 
-	(void)as;
-
 	/* Initial user-level stack pointer */
+	vaddr_t base = USERSTACK - 1024 * PAGE_SIZE;
+	as_define_region(as, base, 1024*PAGE_SIZE,1,1,0);
 	*stackptr = USERSTACK;
 
 	return 0;

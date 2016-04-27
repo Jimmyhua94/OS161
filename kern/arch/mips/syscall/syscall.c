@@ -161,6 +161,9 @@ syscall(struct trapframe *tf)
         case SYS_waitpid:
             err = sys___waitpid(tf->tf_a0,(userptr_t) tf->tf_a1, tf->tf_a2, &retval);
             break;
+		case SYS_sbrk:
+			err = sys___sbrk(tf->tf_a0, &retval);
+			break;
 	    /* Add stuff here */
 	    default:
             kprintf("Unknown syscall %d\n", callno);

@@ -91,7 +91,7 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
             if (elo & TLBLO_VALID) {
                 continue;
             }
-            ehi = faultaddress;
+            ehi = vaddr;
             elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
             tlb_write(ehi, elo, i);
             splx(spl);
@@ -100,7 +100,7 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
     }
     else{
         tlb_read(&ehi, &elo, index);
-        ehi = faultaddress;
+        ehi = vaddr;
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 		tlb_write(ehi, elo, index);
 		splx(spl);
