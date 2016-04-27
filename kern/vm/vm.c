@@ -7,6 +7,8 @@
 #include <spinlock.h>
 #include <cpu.h>
 #include <current.h>
+#include <mips/tlb.h>
+#include <spl.h>
 
 void vm_bootstrap(void){
     //Done in ram_bootstrap
@@ -31,40 +33,38 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
         return EFAULT;
     }
 
-	struct ptentry* pgt = as->pgt;
-	struct region* r = as->r;
+	struct pgtentry* pgt = as->pgt;
+    struct region* r = as->region;
     bool foundpgte = false;
-    vaddr_r pages = NULL;
     vaddr_t vaddr = faultaddress & PAGE_FRAME;
-    paddr_t paddr = NULL;
+    paddr_t paddr = 0;
 	
 	KASSERT(pgt != NULL);
-	KASSERT(r != NULL);
+    KASSERT(r != NULL);
 	
 	int spl;
 	uint32_t ehi, elo;
 	
 	bool valid = false;
-	
-	do{
-		if(vaddr >= as->r->start && vaddr < as->r->start+as->r->pages*PAGE_SIZE){
+	while(r->next != NULL){
+        r = r->next;
+		if(vaddr >= r->start && vaddr < r->start+r->pages*PAGE_SIZE){
 			valid = true;
 			break;
 		}
-		as->r = as->r->next;
-	}while(as->r->next != NULL);
+	}
 	if(!valid){
 		return EFAULT;
 	}
 	
-    do{
+    while(pgt->next != NULL){
+        pgt = pgt->next;
         if(pgt->vpn == vaddr){
             foundpgte = true;
 			paddr = pgt->ppn;
 			break;
         }
-        pgt = pgt->next;
-    }while(pgt->next != NULL);
+    }
 	
     if(!foundpgte){
         while(pgt->next != NULL)
@@ -84,17 +84,28 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
     }
 	
 	spl = splhigh();
-	for (int i=0; i<NUM_TLB; i++) {
-		tlb_read(&ehi, &elo, i);
-		if (elo & TLBLO_VALID) {
-			continue;
-		}
-		ehi = faultaddress;
+    int index = tlb_probe(faultaddress,0);
+	if(index < 0){
+        for (int i=0; i<NUM_TLB; i++) {
+            tlb_read(&ehi, &elo, i);
+            if (elo & TLBLO_VALID) {
+                continue;
+            }
+            ehi = faultaddress;
+            elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
+            tlb_write(ehi, elo, i);
+            splx(spl);
+            return 0;
+        }
+    }
+    else{
+        tlb_read(&ehi, &elo, index);
+        ehi = faultaddress;
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
-		tlb_write(ehi, elo, i);
+		tlb_write(ehi, elo, index);
 		splx(spl);
 		return 0;
-	}
+    }
 	splx(spl);
 	return EFAULT;
 }

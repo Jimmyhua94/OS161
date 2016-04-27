@@ -54,8 +54,8 @@ as_create(void)
     
     as->pgt = kmalloc(sizeof(struct pgtentry));
     as->pgt->next = NULL;
-    as->r = kmalloc(sizeof(struct region));
-    as->r->next = NULL;
+    as->region = kmalloc(sizeof(struct region));
+    as->region->next = NULL;
 
 	return as;
 }
@@ -63,20 +63,42 @@ as_create(void)
 int
 as_copy(struct addrspace *old, struct addrspace **ret)
 {
-	struct addrspace *newas;
+	struct addrspace *new;
 
-	newas = as_create();
-	if (newas==NULL) {
+	new = as_create();
+	if (new==NULL) {
 		return ENOMEM;
 	}
 
 	/*
 	 * Write this.
 	 */
+    struct region* newtemp = new->region;
+    struct region* oldtemp = old->region;
+    while(oldtemp->next != NULL){
+        newtemp->next = kmalloc(sizeof(struct region));
+        newtemp->next->start = oldtemp->next->start;
+        newtemp->next->pages = oldtemp->next->pages;
+        newtemp->next->permissions = oldtemp->next->permissions;
+        newtemp->next->next = NULL;
+        newtemp = newtemp->next;
+        oldtemp = oldtemp->next;
+    }
+    
+    struct pgtentry* pgtnew = new->pgt;
+    struct pgtentry* pgtold = old->pgt;
+    while(pgtold->next != NULL){
+        pgtnew->next = kmalloc(sizeof(struct pgtentry));
+        pgtnew->next->vpn = pgtold->next->vpn;
+        pgtnew->next->ppn = pgtold->next->ppn;
+        pgtnew->next->permission = pgtold->next->permission;
+        pgtnew->next->state = pgtold->next->state;
+        pgtnew->next->next = NULL;
+        pgtnew = pgtnew->next;
+        pgtold = pgtold->next;
+    }
 
-	(void)old;
-
-	*ret = newas;
+	*ret = new;
 	return 0;
 }
 
@@ -149,29 +171,27 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
 	size_t npages;
 
 	/* Align the region. First, the base... */
-	sz += vaddr & ~(vaddr_t)PAGE_FRAME;
+	memsize += vaddr & ~(vaddr_t)PAGE_FRAME;
 	vaddr &= PAGE_FRAME;
 
 	/* ...and now the length. */
-	sz = (sz + PAGE_SIZE - 1) & PAGE_FRAME;
+	memsize = (memsize + PAGE_SIZE - 1) & PAGE_FRAME;
 
-	npages = sz / PAGE_SIZE;
-	
-	struct addrspace* as = proc_getas();
-	
-	do{
-		if(as->r->start == vaddr){
+	npages = memsize / PAGE_SIZE;
+	struct region* temp = as->region;
+	while(temp->next != NULL){
+        temp = temp->next;
+		if(temp->start == vaddr){
 			return 0;
 		}
-		as->r = as->r->next;
-	}while(as->r->next != NULL);
-	as->r->next = kmalloc(sizeof(struct region));
-	if(as->r->next == NULL){
+	}
+	temp->next = kmalloc(sizeof(struct region));
+	if(temp->next == NULL){
 		return ENOMEM;
 	}
-	as->r->next->start = vaddr;
-	as->r->next->pages = npages;
-	as->r->next->permission = as->r->next->permission & readable & writeable & executable;
+	temp->next->start = vaddr;
+	temp->next->pages = npages;
+	temp->next->permissions = temp->next->permissions & readable & writeable & executable;
 	return 0;
 }
 
@@ -182,7 +202,7 @@ as_prepare_load(struct addrspace *as)
 	 * Write this.
 	 */
 	(void)as;
-	// struct region* r = as->r;
+	// struct region* r = as->region;
 	// struct pgtentry* pgt = as->pgt;
 	
 	// while(r->next != NULL){
@@ -190,7 +210,7 @@ as_prepare_load(struct addrspace *as)
 			// pgt = pgt->next;
 		// }
 		// pgt->next = kmalloc(sizeof(struct pgtentry));
-		// pgt->next->vpn = alloc_kpages(as->r->pages);
+		// pgt->next->vpn = alloc_kpages(as->region->pages);
 		// pgt->next->ppn = KVADDR_TO_PADDR(pgt->next->vpn);
 		// paddr = KVADDR_TO_PADDR(vaddr);
 	// }

@@ -74,7 +74,9 @@ struct addrspace {
 #else
         /* Put stuff here for your VM system */
     struct pgtentry* pgt;
-    struct region* r;
+    struct region* region;
+    paddr_t heap_start;
+    paddr_t heap_end;
 #endif
 };
 
