@@ -32,6 +32,7 @@ int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
 			}
 			lock_release(child_proc->lock);
             int exitcode = child_proc->exitcode;
+			proc_destroy(child_proc);
             int result = copyout(&exitcode,status,sizeof(int));
             if (result){
                 return result;

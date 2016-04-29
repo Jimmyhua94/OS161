@@ -116,6 +116,26 @@ as_destroy(struct addrspace *as)
 	/*
 	 * Clean up as needed.
 	 */
+	// struct region* r = as->region;
+	// do{
+		// as->region = r;
+		// r = as->region->next;
+		// kfree(as->region);
+	// }while(r != NULL);
+	
+	struct pgtentry* temp = as->pgt;
+	bool first = true;
+	do{
+		as->pgt = temp;
+		temp = as->pgt->next;
+		if(!first){
+			free_kpages(PADDR_TO_KVADDR(as->pgt->ppn));
+		}
+		else{
+			first = false;
+		}
+		kfree(as->pgt);
+	}while(temp != NULL);
 	kfree(as);
 }
 

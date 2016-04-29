@@ -135,6 +135,8 @@ int sys___execv(const_userptr_t program, userptr_t args){
         return result;
     }
     (void)test;
+	kfree(ptr);
+	kfree(arg);
     /* Warp to user mode. */
 	enter_new_process(maxargs, (userptr_t)stackptr,
 			  NULL /*userspace addr of environment*/,

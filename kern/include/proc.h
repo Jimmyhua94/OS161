@@ -50,6 +50,8 @@ extern pid_t pidCounter;
 
 extern struct spinlock pid_lock;
 
+extern struct lock* vmlock;
+
 struct handler {
     int fd;                     /* File Descriptor, not really needed as index is the same */
     struct vnode *path;         /* File */

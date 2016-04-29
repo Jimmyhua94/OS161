@@ -113,9 +113,23 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
     // }
 }
 
-vaddr_t alloc_kpages(unsigned npages){
-    int index = 0;
-    spinlock_acquire(&coremap_lock);
+int left(void){
+	// spinlock_acquire(&coremap_lock);
+	for(int i = max_pages-1;i > fixed_pages;i--){
+        if(coremap[i].state == free){
+			coremap[i].state = dirty;
+			coremap[i].nsize = PAGE_SIZE;
+			coremap[i].vaddr = PADDR_TO_KVADDR(i*PAGE_SIZE);
+			coremap_bytes += PAGE_SIZE;
+			return i;
+        }
+    }
+	// spinlock_release(&coremap_lock);
+	return 0;
+}
+
+int right(unsigned npages){
+    // spinlock_acquire(&coremap_lock);
 	for(int i = fixed_pages;i < max_pages;i++){
         if(coremap[i].state == free){
             int freepages = 1;
@@ -134,14 +148,56 @@ vaddr_t alloc_kpages(unsigned npages){
                 coremap[i].nsize = npages*PAGE_SIZE;
                 coremap[i].vaddr = PADDR_TO_KVADDR(i*PAGE_SIZE);
                 coremap_bytes += (npages*PAGE_SIZE);
-                index = i;
-                break;
+                return i;
             }
         }
     }
-    // kprintf("%d bytes alloc\n",coremap_bytes);
-    spinlock_release(&coremap_lock);
+    // spinlock_release(&coremap_lock);
+	return 0;
+}
+
+vaddr_t alloc_kpages(unsigned npages){
+    int index = 0;
+	// int freepages = 0;
+	// for(int i = fixed_pages;i < max_pages;i++){
+		// if(coremap[i].state == free){
+			// freepages++;
+		// }
+	// }
+	// (void)freepages;
+	if(npages == 1){
+		index = left();
+	}
+	else{
+		index = right(npages);
+	}
+    // spinlock_acquire(&coremap_lock);
+	// for(int i = fixed_pages;i < max_pages;i++){
+        // if(coremap[i].state == free){
+            // int freepages = 1;
+            // for(int j = 1;j < (int)npages;j++){
+                // if(coremap[i+j].state != free){
+                    // break;
+                // }
+                // freepages++;
+            // }
+            // if(freepages == (int)npages){
+                // for(int j = 1;j < (int)npages;j++){
+                    // coremap[i+j].state = dirty;
+                    // coremap[i+j].nsize = 0;
+                // }
+                // coremap[i].state = dirty;
+                // coremap[i].nsize = npages*PAGE_SIZE;
+                // coremap[i].vaddr = PADDR_TO_KVADDR(i*PAGE_SIZE);
+                // coremap_bytes += (npages*PAGE_SIZE);
+                // index = i;
+                // break;
+            // }
+        // }
+    // }
+    // spinlock_release(&coremap_lock);
     if(index == 0){
+		//KASSERT(1==0);
         return 0;
     }
 	
@@ -149,6 +205,13 @@ vaddr_t alloc_kpages(unsigned npages){
 }
 
 void free_kpages(vaddr_t vaddr){
+	// int freepages = 0;
+	// for(int i = fixed_pages;i < max_pages;i++){
+		// if(coremap[i].state == free){
+			// freepages++;
+		// }
+	// }
+	
 	paddr_t paddr = KVADDR_TO_PADDR(vaddr);
 	int index = paddr/PAGE_SIZE;
 	
@@ -167,7 +230,16 @@ void free_kpages(vaddr_t vaddr){
 			coremap[index].state = free;
 		}
 	}
+	
 	spinlock_release(&coremap_lock);
+	
+	// freepages = 0;
+	// for(int i = fixed_pages;i < max_pages;i++){
+		// if(coremap[i].state == free){
+			// freepages++;
+		// }
+	// }
+	// (void)freepages;
 }
 
 __size_t coremap_used_bytes(void){
