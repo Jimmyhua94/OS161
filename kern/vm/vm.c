@@ -35,12 +35,11 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
 
 	struct pgtentry* pgt = as->pgt;
     struct region* r = as->region;
-    bool foundpgte = false;
+    KASSERT(pgt != NULL);
+    KASSERT(r != NULL);
+    
     vaddr_t vaddr = faultaddress & PAGE_FRAME;
     paddr_t paddr = 0;
-	
-	KASSERT(pgt != NULL);
-    KASSERT(r != NULL);
 	
 	int spl;
 	uint32_t ehi, elo;
@@ -48,7 +47,7 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
 	bool valid = false;
 	while(r->next != NULL){
         r = r->next;
-		if(vaddr >= r->start && vaddr < r->start+r->pages*PAGE_SIZE){
+		if((vaddr >= r->start && vaddr < r->start+r->pages*PAGE_SIZE) || (vaddr >= as->heap_start && vaddr < as->heap_end)){
 			valid = true;
 			break;
 		}
@@ -57,6 +56,7 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
 		return EFAULT;
 	}
 	
+    bool foundpgte = false;
     while(pgt->next != NULL){
         pgt = pgt->next;
         if(pgt->vpn == vaddr){
@@ -84,8 +84,8 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
     }
 	
 	spl = splhigh();
-    int index = tlb_probe(faultaddress,0);
-	if(index < 0){
+    // int index = tlb_probe(vaddr,0);
+	// if(index < 0){
         for (int i=0; i<NUM_TLB; i++) {
             tlb_read(&ehi, &elo, i);
             if (elo & TLBLO_VALID) {
@@ -97,17 +97,20 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
             splx(spl);
             return 0;
         }
-    }
-    else{
-        tlb_read(&ehi, &elo, index);
         ehi = vaddr;
-		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
-		tlb_write(ehi, elo, index);
-		splx(spl);
-		return 0;
-    }
-	splx(spl);
-	return EFAULT;
+        elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
+        tlb_random(ehi, elo);
+        splx(spl);
+        return 0;
+    // }
+    // else{
+        // tlb_read(&ehi, &elo, index);
+        // ehi = vaddr;
+		// elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
+		// tlb_write(ehi, elo, index);
+		// splx(spl);
+		// return 0;
+    // }
 }
 
 vaddr_t alloc_kpages(unsigned npages){

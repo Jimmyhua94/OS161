@@ -243,7 +243,6 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 	/*
 	 * Write this.
 	 */
-
 	/* Initial user-level stack pointer */
 	vaddr_t base = USERSTACK - 1024 * PAGE_SIZE;
 	as_define_region(as, base, 1024*PAGE_SIZE,1,1,0);
