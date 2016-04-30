@@ -200,7 +200,7 @@ vaddr_t alloc_kpages(unsigned npages){
 		//KASSERT(1==0);
         return 0;
     }
-	
+	memset((void*)(coremap[index].vaddr),0,npages*PAGE_SIZE);
 	return coremap[index].vaddr;
 }
 

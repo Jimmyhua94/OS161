@@ -113,7 +113,7 @@ int sys___execv(const_userptr_t program, userptr_t args){
 		return result;
 	}
 	
-	curproc->p_name = tempargs[0];
+	//curproc->p_name = tempargs[0];
     
 	//assign address to each offset
     // userptr_t ptrs = kmalloc(maxargs+1);
