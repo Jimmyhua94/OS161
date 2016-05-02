@@ -87,6 +87,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
     
     struct pgtentry* pgtnew = new->pgt;
     struct pgtentry* pgtold = old->pgt;
+    lock_acquire(coremap_biglock);
     while(pgtold->next != NULL){
         pgtnew->next = kmalloc(sizeof(struct pgtentry));
         pgtnew->next->vpn = pgtold->next->vpn;
@@ -105,6 +106,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
         pgtnew = pgtnew->next;
         pgtold = pgtold->next;
     }
+    lock_release(coremap_biglock);
 
 	*ret = new;
 	return 0;

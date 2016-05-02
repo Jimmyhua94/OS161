@@ -67,6 +67,8 @@ pid_t pidCounter;		/* kernel proc only, keeps track of pid index count */
 
 bool bsDone;
 
+struct lock* coremap_biglock;
+
 /*
  * Create a proc structure.
  */
@@ -220,6 +222,8 @@ proc_bootstrap(void)
 	memset(pt,0,sizeof(pt));
 	
 	vmlock = lock_create("vmlock");
+    
+    coremap_biglock = lock_create("coremap_biglock");
 	
 	kproc = proc_create("[kernel]");
 	if (kproc == NULL) {
