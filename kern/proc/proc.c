@@ -114,7 +114,7 @@ proc_create(const char *name)
     proc->fdlock = lock_create("fdlock");
 	
 	proc->waitlock = NULL;
-	proc->lock = NULL;
+	proc->lock = lock_create("waitlock");
     
     memset(proc->ft,0,sizeof(proc->ft));
 

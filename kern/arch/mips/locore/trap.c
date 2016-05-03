@@ -73,7 +73,7 @@ static
 void
 kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 {
-	int sig = 0;
+	 int sig = 0;
 
 	KASSERT(code < NTRAPCODES);
 	switch (code) {
@@ -111,10 +111,13 @@ kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 	/*
 	 * You will probably want to change this.
 	 */
-
-	kprintf("Fatal user mode trap %u sig %d (%s, epc 0x%x, vaddr 0x%x)\n",
-		code, sig, trapcodenames[code], epc, vaddr);
-	panic("I don't know how to handle this\n");
+     
+    sys___fatal(sig);
+    // (void)epc;
+    // (void)vaddr;
+    kprintf("Fatal user mode trap %u sig %d (%s, epc 0x%x, vaddr 0x%x)\n",
+        code, sig, trapcodenames[code], epc, vaddr);
+	// panic("I don't know how to handle this\n");
 }
 
 /*

@@ -53,6 +53,7 @@ proc_create(const char *name)
     
     
     proc->fdlock = curproc->fdlock;
+    proc->lock = lock_create("waitlock");
     
     //memset(proc->ft,0,sizeof(proc->ft));
 

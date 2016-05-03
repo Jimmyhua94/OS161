@@ -26,3 +26,20 @@ void sys___exit(int exitcode)
 	}
     thread_exit();
 }
+void sys___fatal(int exitcode){
+	curproc->exited = true;
+    curproc->exitcode = _MKWAIT_SIG(exitcode);
+	
+	// for(int i = 3;i < OPEN_MAX;i++){
+		// if(curproc->ft[i] != NULL){
+			// sys___close(i);
+		// }
+	// }
+    
+	if(curproc->waiting){
+		lock_acquire(curproc->lock);
+		cv_broadcast(curproc->waitlock,curproc->lock);
+		lock_release(curproc->lock);
+	}
+    thread_exit();
+}

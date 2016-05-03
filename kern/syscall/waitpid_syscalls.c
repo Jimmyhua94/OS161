@@ -20,7 +20,7 @@ int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
     if(pidIndex != -1){
         struct proc* child_proc = getproc(pidIndex);
 		child_proc->waitlock = cv_create("waitlock");
-		child_proc->lock = lock_create("waitlocklock");
+		// child_proc->lock = lock_create("waitlocklock");
         if(child_proc->ppid != curproc->pid){
             return ECHILD;
         }
