@@ -103,23 +103,23 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
 }
 
 int left(void){
-	spinlock_acquire(&coremap_lock);
+	spinlock_acquire(&coremap_slock);
 	for(int i = max_pages-1;i > fixed_pages;i--){
         if(coremap[i].state == free){
 			coremap[i].state = dirty;
 			coremap[i].nsize = PAGE_SIZE;
 			coremap[i].vaddr = PADDR_TO_KVADDR(i*PAGE_SIZE);
 			coremap_bytes += PAGE_SIZE;
-            spinlock_release(&coremap_lock);
+            spinlock_release(&coremap_slock);
 			return i;
         }
     }
-	spinlock_release(&coremap_lock);
+	spinlock_release(&coremap_slock);
 	return 0;
 }
 
 int right(unsigned npages){
-    spinlock_acquire(&coremap_lock);
+    spinlock_acquire(&coremap_slock);
 	for(int i = fixed_pages;i < max_pages;i++){
         if(coremap[i].state == free){
             int freepages = 1;
@@ -138,12 +138,12 @@ int right(unsigned npages){
                 coremap[i].nsize = npages*PAGE_SIZE;
                 coremap[i].vaddr = PADDR_TO_KVADDR(i*PAGE_SIZE);
                 coremap_bytes += (npages*PAGE_SIZE);
-                spinlock_release(&coremap_lock);
+                spinlock_release(&coremap_slock);
                 return i;
             }
         }
     }
-    spinlock_release(&coremap_lock);
+    spinlock_release(&coremap_slock);
 	return 0;
 }
 
@@ -167,7 +167,7 @@ void free_kpages(vaddr_t vaddr){
 	paddr_t paddr = KVADDR_TO_PADDR(vaddr);
 	int index = paddr/PAGE_SIZE;
 	
-	spinlock_acquire(&coremap_lock);
+	spinlock_acquire(&coremap_slock);
 	if(coremap[index].vaddr == vaddr){
 		if(coremap[index].state != free && coremap[index].nsize != 0){
 			int pages = coremap[index].nsize/PAGE_SIZE;
@@ -182,7 +182,7 @@ void free_kpages(vaddr_t vaddr){
 		}
 	}
 	
-	spinlock_release(&coremap_lock);
+	spinlock_release(&coremap_slock);
 }
 
 __size_t coremap_used_bytes(void){

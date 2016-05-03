@@ -27,7 +27,7 @@ int sys___sbrk(int amount, int32_t *retval){
         for(int i = 0;i < npages;i++){
             struct pgtentry* pgt = as->pgt;
             struct pgtentry* last = pgt;
-            // lock_acquire(curproc->lock);
+            // lock_acquire(coremap_biglock);
             while(pgt->next!=NULL){
                 last = pgt;
                 pgt = pgt->next;
@@ -43,7 +43,7 @@ int sys___sbrk(int amount, int32_t *retval){
                     break;
                 }
             }
-            // lock_release(curproc->lock);
+            // lock_release(coremap_biglock);
             rempage += PAGE_SIZE;
         }
     }
