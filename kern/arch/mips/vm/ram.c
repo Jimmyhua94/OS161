@@ -39,7 +39,7 @@ vaddr_t firstfree;   /* first free virtual address; set by start.S */
 paddr_t firstpaddr;  /* address of first free physical page */
 paddr_t lastpaddr;   /* one past end of last free physical page */
 
-struct spinlock coremap_lock;
+struct spinlock coremap_slock;
 int max_pages;
 int fixed_pages;
 size_t coremap_bytes;
@@ -79,7 +79,7 @@ ram_bootstrap(void)
 	kprintf("%uk physical memory available\n",
 		(lastpaddr-firstpaddr)/1024);
 		
-	spinlock_init(&coremap_lock);
+	spinlock_init(&coremap_slock);
 	coremap_bytes = 0;
     max_pages = lastpaddr / PAGE_SIZE;  //Should get rounded down because of int
     coremap = (struct coremap_entry*)PADDR_TO_KVADDR(firstpaddr);

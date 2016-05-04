@@ -59,13 +59,14 @@ struct proc *kproc;
 
 struct spinlock pid_lock;
 
-struct lock* vmlock;
-
 struct proc** pt;		//proc table
 
 pid_t pidCounter;		/* kernel proc only, keeps track of pid index count */
 
 bool bsDone;
+
+struct lock* coremap_biglock;
+struct lock* coremap_lock;
 
 /*
  * Create a proc structure.
@@ -112,7 +113,7 @@ proc_create(const char *name)
     proc->fdlock = lock_create("fdlock");
 	
 	proc->waitlock = NULL;
-	proc->lock = NULL;
+	proc->lock = lock_create("waitlock");
     
     memset(proc->ft,0,sizeof(proc->ft));
 
@@ -218,8 +219,10 @@ proc_bootstrap(void)
 	pidCounter = PID_MIN;
 	pt = kmalloc(128*(sizeof(struct proc*)));
 	memset(pt,0,sizeof(pt));
-	
-	vmlock = lock_create("vmlock");
+    
+    coremap_biglock = lock_create("coremap_biglock");
+    
+    coremap_lock = lock_create("coremap_lock");
 	
 	kproc = proc_create("[kernel]");
 	if (kproc == NULL) {

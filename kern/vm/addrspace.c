@@ -87,6 +87,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
     
     struct pgtentry* pgtnew = new->pgt;
     struct pgtentry* pgtold = old->pgt;
+    // lock_acquire(coremap_biglock);
     while(pgtold->next != NULL){
         pgtnew->next = kmalloc(sizeof(struct pgtentry));
         pgtnew->next->vpn = pgtold->next->vpn;
@@ -105,6 +106,10 @@ as_copy(struct addrspace *old, struct addrspace **ret)
         pgtnew = pgtnew->next;
         pgtold = pgtold->next;
     }
+    // lock_release(coremap_biglock);
+    
+    new->heap_start=old->heap_start;
+    new->heap_end=old->heap_end;
 
 	*ret = new;
 	return 0;
@@ -125,6 +130,7 @@ as_destroy(struct addrspace *as)
 	
 	struct pgtentry* temp = as->pgt;
 	bool first = true;
+    lock_acquire(coremap_biglock);
 	do{
 		as->pgt = temp;
 		temp = as->pgt->next;
@@ -136,6 +142,7 @@ as_destroy(struct addrspace *as)
 		}
 		kfree(as->pgt);
 	}while(temp != NULL);
+    lock_release(coremap_biglock);
 	kfree(as);
 }
 
@@ -265,7 +272,33 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 	 */
 	/* Initial user-level stack pointer */
 	vaddr_t base = USERSTACK - 1024 * PAGE_SIZE;
-	as_define_region(as, base, 1024*PAGE_SIZE,1,1,0);
+    
+    size_t memsize = 1024*PAGE_SIZE;
+    
+	size_t npages;
+
+	/* Align the region. First, the base... */
+	memsize += base & ~(vaddr_t)PAGE_FRAME;
+	base &= PAGE_FRAME;
+
+	/* ...and now the length. */
+	memsize = (memsize + PAGE_SIZE - 1) & PAGE_FRAME;
+
+	npages = memsize / PAGE_SIZE;
+	struct region* temp = as->region;
+	while(temp->next != NULL){
+        temp = temp->next;
+		if(temp->start == base){
+			return 0;
+		}
+	}
+	temp->next = kmalloc(sizeof(struct region));
+	if(temp->next == NULL){
+		return ENOMEM;
+	}
+	temp->next->start = base;
+	temp->next->pages = npages;
+	temp->next->permissions = temp->next->permissions & 1 & 1 & 1;
 	*stackptr = USERSTACK;
 
 	return 0;
