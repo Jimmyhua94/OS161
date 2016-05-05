@@ -51,6 +51,7 @@
 #include <kern/fcntl.h>
 #include <kern/unistd.h>
 #include <vfs.h>
+#include <syscall.h>
 
 /*
  * The process for the kernel; this holds all the kernel-only threads.
@@ -66,7 +67,7 @@ pid_t pidCounter;		/* kernel proc only, keeps track of pid index count */
 bool bsDone;
 
 struct lock* coremap_biglock;
-struct lock* coremap_lock;
+// struct lock* coremap_lock;
 
 /*
  * Create a proc structure.
@@ -129,6 +130,8 @@ proc_create(const char *name)
 void
 proc_destroy(struct proc *proc)
 {
+    struct proc* test = proc;
+    (void)test;
 	/*
 	 * You probably want to destroy and null out much of the
 	 * process (particularly the address space) at exit time if
@@ -200,6 +203,25 @@ proc_destroy(struct proc *proc)
 		as_destroy(as);
 	}
     
+	for(int i = 0;i < OPEN_MAX;i++){
+		if(proc->ft[i] != NULL){
+            lock_acquire(proc->ft[i]->lock);
+            proc->ft[i]->count--;
+            lock_release(proc->ft[i]->lock);
+            if(proc->ft[i]->count == 0){
+                lock_acquire(proc->ft[i]->lock);
+                vfs_close(proc->ft[i]->path);
+                lock_release(proc->ft[i]->lock);
+                lock_destroy(proc->ft[i]->lock);
+                kfree(proc->ft[i]);
+                proc->ft[i] = NULL;
+            }
+		}
+	}
+    
+    lock_destroy(proc->fdlock);
+    lock_destroy(proc->lock);
+    
     pt[proc->procIndex] = NULL;
 
 	KASSERT(proc->p_numthreads == 0);
@@ -222,7 +244,7 @@ proc_bootstrap(void)
     
     coremap_biglock = lock_create("coremap_biglock");
     
-    coremap_lock = lock_create("coremap_lock");
+    // coremap_lock = lock_create("coremap_lock");
 	
 	kproc = proc_create("[kernel]");
 	if (kproc == NULL) {

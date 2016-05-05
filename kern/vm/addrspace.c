@@ -121,12 +121,6 @@ as_destroy(struct addrspace *as)
 	/*
 	 * Clean up as needed.
 	 */
-	// struct region* r = as->region;
-	// do{
-		// as->region = r;
-		// r = as->region->next;
-		// kfree(as->region);
-	// }while(r != NULL);
 	
 	struct pgtentry* temp = as->pgt;
 	bool first = true;
@@ -143,7 +137,15 @@ as_destroy(struct addrspace *as)
 		kfree(as->pgt);
 	}while(temp != NULL);
     lock_release(coremap_biglock);
-	kfree(as);
+    
+	struct region* r = as->region;
+	do{
+		as->region = r;
+		r = as->region->next;
+		kfree(as->region);
+	}while(r != NULL);
+    
+    kfree(as);
 }
 
 void
@@ -227,6 +229,7 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
 	temp->next->start = vaddr;
 	temp->next->pages = npages;
 	temp->next->permissions = temp->next->permissions & readable & writeable & executable;
+    temp->next->next = NULL;
 	as->heap_start = as->heap_end = vaddr + npages*PAGE_SIZE;
 	return 0;
 }
@@ -299,6 +302,7 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 	temp->next->start = base;
 	temp->next->pages = npages;
 	temp->next->permissions = temp->next->permissions & 1 & 1 & 1;
+    temp->next->next = NULL;
 	*stackptr = USERSTACK;
 
 	return 0;
