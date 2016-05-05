@@ -19,6 +19,7 @@ int sys___close(int fd){
         lock_acquire(curproc->ft[fd]->lock);
 		vfs_close(curproc->ft[fd]->path);
         lock_release(curproc->ft[fd]->lock);
+        lock_destroy(curproc->ft[fd]->lock);
         kfree(curproc->ft[fd]);
         curproc->ft[fd] = NULL;
     }

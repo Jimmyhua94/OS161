@@ -52,7 +52,7 @@ extern struct coremap_entry* coremap;
 extern struct spinlock coremap_slock;
 
 extern struct lock* coremap_biglock;
-extern struct lock* coremap_lock;
+// extern struct lock* coremap_lock;
 
 extern paddr_t firstpaddr;  /* address of first free physical page */
 extern paddr_t lastpaddr;

@@ -116,7 +116,8 @@ runprogram(char *progname)
 	handle->lock = lock_create("stdin_lock");
     curproc->ft[STDIN_FILENO] = handle;
     handle = NULL;
-
+    kfree(console);
+    
     console = kstrdup("con:");
     result = vfs_open(console,O_WRONLY,0664,&stdv);
     if (result){
@@ -130,6 +131,7 @@ runprogram(char *progname)
 	handle->lock = lock_create("stdout_lock");
     curproc->ft[STDOUT_FILENO] = handle;
     handle = NULL;
+    kfree(console);
     
     console = kstrdup("con:");
     result = vfs_open(console,O_WRONLY,0664,&stdv);
@@ -143,7 +145,8 @@ runprogram(char *progname)
     handle->count = 1;
 	handle->lock = lock_create("stderr_lock");
     curproc->ft[STDERR_FILENO] = handle;
-
+    kfree(console);
+    
 	/* Warp to user mode. */
 	enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,
 			  NULL /*userspace addr of environment*/,

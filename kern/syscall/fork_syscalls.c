@@ -52,7 +52,7 @@ proc_create(const char *name)
     proc->exitcode = 0;
     
     
-    proc->fdlock = curproc->fdlock;
+    proc->fdlock = lock_create("fdlock");
     proc->lock = lock_create("waitlock");
     
     //memset(proc->ft,0,sizeof(proc->ft));
@@ -63,7 +63,9 @@ proc_create(const char *name)
 void child_forkentry(void *tf, unsigned long addrspace){
 	// curproc->p_addrspace = (struct addrspace*)addrspace;
 	(void)addrspace;
-    struct trapframe child_tf = *(struct trapframe*)tf;
+    struct trapframe child_tf;
+    memcpy(&child_tf,tf,sizeof(struct trapframe));
+    kfree(tf);
     child_tf.tf_v0 = 0;
     child_tf.tf_a3 = 0;
     child_tf.tf_epc += 4;
