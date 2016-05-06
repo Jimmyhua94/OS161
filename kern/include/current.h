@@ -69,7 +69,7 @@
 
 #include <cpu.h>
 #define curthread curcpu->c_curthread
-#define CURCPU_EXISTS() (curcpu != NULL)
+#define CURCPU_EXISTS() (curcpu != NULL && curcpu!= (void*)0xdeadbeef)
 
 #endif
 
