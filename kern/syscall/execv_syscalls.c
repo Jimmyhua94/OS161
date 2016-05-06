@@ -20,7 +20,11 @@ int sys___execv(const_userptr_t program, userptr_t args){
     char filepath[PATH_MAX];
     size_t size = 0;
     
+    if(args == NULL){
+        return EFAULT;
+    }
     char **tempargs = (char**)args;
+    
     int maxargs = 0;
     while(tempargs[maxargs] != NULL){
         maxargs++;
@@ -36,6 +40,10 @@ int sys___execv(const_userptr_t program, userptr_t args){
     if (result){
         return result;
     }
+    if(size == 1){
+        return EINVAL;
+    }
+    
     
     int i = 0;
     ptr[i] = (userptr_t)((maxargs+1)*4);
