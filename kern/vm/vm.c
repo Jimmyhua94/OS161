@@ -79,6 +79,12 @@ int vm_fault(int faulttype, vaddr_t faultaddress){
         pgt->next->ppn = KVADDR_TO_PADDR(alloc_kpages(1));
         pgt->next->permission = faulttype;
         pgt->next->state = false;
+		if((vaddr >= as->heap_start && vaddr < as->heap_end)){
+			pgt->next->heap = true;
+		}
+		else{
+			pgt->next->heap = false;
+		}
         pgt->next->next = NULL;
 		paddr = pgt->next->ppn;
     }

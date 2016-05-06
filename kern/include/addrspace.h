@@ -53,6 +53,7 @@ struct pgtentry{
     mode_t permission;
     bool state;
     struct pgtentry* next;
+	bool heap;
 };
 
 struct region{

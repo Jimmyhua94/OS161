@@ -102,6 +102,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 		memcpy((void *)PADDR_TO_KVADDR(pgtnew->next->ppn),(void *)pgvaddr,coremap[i].nsize);
         pgtnew->next->permission = pgtold->next->permission;
         pgtnew->next->state = pgtold->next->state;
+        pgtnew->next->heap = pgtold->next->heap;
         pgtnew->next->next = NULL;
         pgtnew = pgtnew->next;
         pgtold = pgtold->next;
