@@ -19,8 +19,6 @@ int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
     int pidIndex = getpidIndex(pid);
     if(pidIndex != -1){
         struct proc* child_proc = getproc(pidIndex);
-		child_proc->waitlock = cv_create("waitlock");
-		// child_proc->lock = lock_create("waitlocklock");
         if(child_proc->ppid != curproc->pid){
             return ECHILD;
         }
@@ -32,7 +30,6 @@ int sys___waitpid(pid_t pid, userptr_t status, int options, int32_t *retval){
 			}
 			lock_release(child_proc->lock);
             int exitcode = child_proc->exitcode;
-            cv_destroy(child_proc->waitlock);
 			proc_destroy(child_proc);
             int result = copyout(&exitcode,status,sizeof(int));
             if (result){

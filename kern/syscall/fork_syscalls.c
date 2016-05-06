@@ -54,6 +54,7 @@ proc_create(const char *name)
     
     proc->fdlock = lock_create("fdlock");
     proc->lock = lock_create("waitlock");
+    proc->waitlock = cv_create("cvwait_lock");
     
     //memset(proc->ft,0,sizeof(proc->ft));
 
@@ -83,6 +84,10 @@ int sys___fork(struct trapframe *tf,int *retval)
     memcpy(tf_child,tf,sizeof(struct trapframe));
     
     struct proc* child_proc = proc_create("test");
+    if(child_proc == NULL){
+        return ENOMEM;
+    }
+
     child_proc->ppid = curproc->pid;
 	child_proc->p_cwd = curproc->p_cwd;
 	VOP_INCREF(child_proc->p_cwd);

@@ -113,7 +113,7 @@ proc_create(const char *name)
 	proc->waiting = false;
     proc->fdlock = lock_create("fdlock");
 	
-	proc->waitlock = NULL;
+	proc->waitlock = cv_create("cvwait_lock");
 	proc->lock = lock_create("waitlock");
     
     memset(proc->ft,0,sizeof(proc->ft));
@@ -205,14 +205,20 @@ proc_destroy(struct proc *proc)
     
 	for(int i = 0;i < OPEN_MAX;i++){
 		if(proc->ft[i] != NULL){
-            lock_acquire(proc->ft[i]->lock);
-            proc->ft[i]->count--;
-            lock_release(proc->ft[i]->lock);
-            if(proc->ft[i]->count == 0){
+            if(proc->ft[i]->lock != NULL && proc->ft[i]->lock != (void*)0xdeadbeef){
                 lock_acquire(proc->ft[i]->lock);
-                vfs_close(proc->ft[i]->path);
+                proc->ft[i]->count--;
                 lock_release(proc->ft[i]->lock);
-                lock_destroy(proc->ft[i]->lock);
+                if(proc->ft[i]->count == 0){
+                    lock_acquire(proc->ft[i]->lock);
+                    vfs_close(proc->ft[i]->path);
+                    lock_release(proc->ft[i]->lock);
+                    lock_destroy(proc->ft[i]->lock);
+                    kfree(proc->ft[i]);
+                    proc->ft[i] = NULL;
+                }
+            }
+            else{
                 kfree(proc->ft[i]);
                 proc->ft[i] = NULL;
             }
@@ -221,6 +227,7 @@ proc_destroy(struct proc *proc)
     
     lock_destroy(proc->fdlock);
     lock_destroy(proc->lock);
+    cv_destroy(proc->waitlock);
     
     pt[proc->procIndex] = NULL;
 
