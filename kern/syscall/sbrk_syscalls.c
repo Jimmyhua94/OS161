@@ -11,18 +11,22 @@
 
 int sys___sbrk(int amount, int32_t *retval){
 	struct addrspace *as = proc_getas();
-	if(amount%4 != 0)
+	if(amount%4 != 0){
+        *retval = -1;
         return EINVAL;
+    }
     if(amount < 0){
         int amt = amount*-1;
         int size = as->heap_end-as->heap_start;
         if(amt > size){
+            *retval = -1;
             return EINVAL;
         }
     }
     vaddr_t temp = as->heap_end + amount;
     vaddr_t stackbase = (USERSTACK - 1024 * PAGE_SIZE);
     if(temp > stackbase){
+        *retval = -1;
         return ENOMEM;
     }
     if(amount < 0){
