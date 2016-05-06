@@ -98,7 +98,11 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 				break;
 			}
 		}
-        pgtnew->next->ppn = KVADDR_TO_PADDR(alloc_kpages(coremap[i].nsize/PAGE_SIZE));
+		vaddr_t pp = alloc_kpages(coremap[i].nsize/PAGE_SIZE);
+		if(pp == 0){
+			return ENOMEM;
+		}
+        pgtnew->next->ppn = KVADDR_TO_PADDR(pp);
 		memcpy((void *)PADDR_TO_KVADDR(pgtnew->next->ppn),(void *)pgvaddr,coremap[i].nsize);
         pgtnew->next->permission = pgtold->next->permission;
         pgtnew->next->state = pgtold->next->state;

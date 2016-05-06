@@ -83,7 +83,7 @@ int sys___fork(struct trapframe *tf,int *retval)
     }
     memcpy(tf_child,tf,sizeof(struct trapframe));
     
-    struct proc* child_proc = proc_create("test");
+    struct proc* child_proc = proc_create("forked");
     if(child_proc == NULL){
         return ENOMEM;
     }
